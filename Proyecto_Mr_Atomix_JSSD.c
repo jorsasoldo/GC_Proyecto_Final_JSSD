@@ -167,6 +167,15 @@ typedef struct Personaje
     struct Personaje *hermano;
 }Personaje;
 
+typedef struct Boton 
+{
+    float x, y;
+    float ancho, alto;
+    char texto[20];
+    void (*accion)();
+    bool hover;
+}Boton;
+
 ma_engine motor_audio;
 bool audio_inicializado = false;
 Pelicula *pelicula_global = NULL;
@@ -175,6 +184,11 @@ Frame *frame_actual = NULL;
 double tiempo_acumulado = 0.0;
 int ultimo_tiempo = 0;
 PilaFrames *pila_deshacer = NULL;
+bool en_pausa = false;
+int ventana_principal;
+int ventana_controles;
+Boton botones[4];
+int num_botones = 4;
 
 Punto *crea_punto(int id, double x, double y, double z, double u, double v) 
 {
@@ -1197,7 +1211,7 @@ void free_pelicula(Pelicula *pelicula)
 }
 
 
-PilaFrames *crea_pila_frames(int limite) 
+PilaFrames *crea_pila_frames() 
 {
     PilaFrames *pila = (PilaFrames*)malloc(sizeof(PilaFrames));
 
@@ -1205,42 +1219,39 @@ PilaFrames *crea_pila_frames(int limite)
         return NULL;
 
     pila->tope = NULL;
-    pila->limite = limite;
+    pila->limite = -1;
     return pila;
 }
 
 void push_pila_frame(PilaFrames *pila, Frame *frame, Escena *escena) 
 {
-    int cant = 0;
-
-    NodoPilaFrame *temp = pila->tope;
-
-    while(temp != NULL && cant < pila->limite) 
-    {
-        temp = temp->sig;
-        cant++;
-    }
-    
-    if(cant >= pila->limite) 
-    {
-        NodoPilaFrame *anterior = pila->tope;
-
-        while(anterior->sig->sig != NULL)
-            anterior = anterior->sig;
-            
-        free(anterior->sig);
-        anterior->sig = NULL;
-    }
-    
     NodoPilaFrame *nuevo = (NodoPilaFrame*)malloc(sizeof(NodoPilaFrame));
 
-    if(nuevo == NULL)
+    if(nuevo == NULL) 
+    {
+        puts("Error: No se pudo asignar memoria para la pila de frames");
         return;
+    }
 
     nuevo->frame_actual = frame;
     nuevo->escena_actual = escena;
     nuevo->sig = pila->tope;
     pila->tope = nuevo;
+}
+
+int cuenta_frames_pila(PilaFrames *pila) 
+{
+    int cant = 0;
+
+    NodoPilaFrame *temp = pila->tope;
+    
+    while(temp != NULL) 
+    {
+        cant++;
+        temp = temp->sig;
+    }
+    
+    return cant;
 }
 
 Frame *pop_pila_frame(PilaFrames *pila, Escena **escena_out) 
@@ -1397,6 +1408,290 @@ void free_cola_recursos(ColaRecursos *cola)
     free(cola);
 }
 
+void pausa()
+{
+    en_pausa = !en_pausa;
+    
+    if(en_pausa) 
+        puts("=== PAUSA ===");
+
+    else 
+    {
+        puts("=== REANUDADO ===");
+        ultimo_tiempo = glutGet(GLUT_ELAPSED_TIME);
+    }
+    
+    glutSetWindow(ventana_controles);
+    glutPostRedisplay();
+}
+
+void retroceder() 
+{
+    if(pila_deshacer != NULL && pila_deshacer->tope != NULL) 
+    {
+        Escena *escena_anterior;
+        frame_actual = pop_pila_frame(pila_deshacer, &escena_anterior);
+        escena_actual = escena_anterior;
+        tiempo_acumulado = 0.0;
+    }
+
+    else 
+        puts("No hay frames anteriores para retroceder");
+}
+
+
+void reinicia_pelicula() 
+{
+    if(pelicula_global == NULL) 
+    {
+        puts("Error: No existe una peliculaa");
+        return;
+    }
+
+    int frames_guardados = cuenta_frames_pila(pila_deshacer);
+    
+    free_pila_frames(pila_deshacer);
+    
+    pila_deshacer = crea_pila_frames();
+    
+    printf("Frames limpiados del historial: %d\n", frames_guardados);
+    
+    escena_actual = pelicula_global->frente;
+    
+    if(escena_actual != NULL) 
+    {
+        frame_actual = escena_actual->primer_frame;
+        tiempo_acumulado = 0.0;
+        ultimo_tiempo = glutGet(GLUT_ELAPSED_TIME);
+        
+        en_pausa = false;
+        
+        printf("Película reiniciada desde el inicio\n");
+        printf("Escena actual: %s\n", escena_actual->nombre);
+        
+        if(frame_actual != NULL)
+            printf("Frame actual: %d\n", frame_actual->id_frame);
+    } 
+    else 
+    {
+        printf("Advertencia: No hay escenas en la película\n");
+        frame_actual = NULL;
+    }
+    
+    printf("============================\n\n");
+}
+
+void salir()
+{
+    puts("FIN");
+    exit(0);
+}
+
+void inicializa_botones() 
+{
+    float espacio = 10.0;
+    float ancho_boton = 90.0;
+    float alto_boton = 40.0;
+    float y_pos = 30.0;
+    float x_inicio = 30.0;
+    
+    //Boton para reanudar o pausar
+    botones[0].x = x_inicio;
+    botones[0].y = y_pos;
+    botones[0].ancho = ancho_boton;
+    botones[0].alto = alto_boton;
+    strcpy(botones[0].texto, en_pausa ? "Reanudar" : "Pausa");
+    botones[0].accion = pausa;
+    botones[0].hover = false;
+    
+    //Boton para retroceder
+    botones[1].x = x_inicio + ancho_boton + espacio;
+    botones[1].y = y_pos;
+    botones[1].ancho = ancho_boton;
+    botones[1].alto = alto_boton;
+    strcpy(botones[1].texto, "<<");
+    botones[1].accion = retroceder;
+    botones[1].hover = false;
+    
+    //boton para reiniciar
+    botones[2].x = x_inicio + (ancho_boton + espacio) * 2;
+    botones[2].y = y_pos;
+    botones[2].ancho = ancho_boton;
+    botones[2].alto = alto_boton;
+    strcpy(botones[2].texto, "Reiniciar");
+    botones[2].accion = reinicia_pelicula;
+    botones[2].hover = false;
+    
+    //boton para salir
+    botones[3].x = x_inicio + (ancho_boton + espacio) * 3;
+    botones[3].y = y_pos;
+    botones[3].ancho = ancho_boton;
+    botones[3].alto = alto_boton;
+    strcpy(botones[3].texto, "Salir");
+    botones[3].accion = salir;
+    botones[3].hover = false;
+}
+
+void dibuja_boton(Boton *btn) 
+{
+    glDisable(GL_TEXTURE_2D);
+    
+    //Color del boton si el mouse esta encima de el
+    if(btn->hover) 
+    {
+        glColor3f(0.3, 0.5, 0.8);
+    }
+    
+    else 
+    {
+        glColor3f(0.2, 0.3, 0.6);
+    }
+    
+    //Fondo del boton
+    glBegin(GL_POLYGON);
+    glVertex2f(btn->x, btn->y);
+    glVertex2f(btn->x + btn->ancho, btn->y);
+    glVertex2f(btn->x + btn->ancho, btn->y + btn->alto);
+    glVertex2f(btn->x, btn->y + btn->alto);
+    glEnd();
+    
+    //Borde del boton
+    glColor3f(1.0, 1.0, 1.0);
+    glLineWidth(2.0);
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(btn->x, btn->y);
+    glVertex2f(btn->x + btn->ancho, btn->y);
+    glVertex2f(btn->x + btn->ancho, btn->y + btn->alto);
+    glVertex2f(btn->x, btn->y + btn->alto);
+    glEnd();
+    glLineWidth(1.0);
+    
+    //Texto del boton
+
+    glColor3f(1.0, 1.0, 1.0);
+    int texto_ancho = 0;
+
+    for(int i = 0; btn->texto[i] != '\0'; i++)
+        texto_ancho += glutBitmapWidth(GLUT_BITMAP_HELVETICA_12, btn->texto[i]);
+    
+    float texto_x = btn->x + (btn->ancho - texto_ancho) / 2;
+    float texto_y = btn->y + btn->alto / 2 - 6;
+    
+    glRasterPos2f(texto_x, texto_y);
+
+    for(int i = 0; btn->texto[i] != '\0'; i++)
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, btn->texto[i]);
+}
+
+void display_controles() 
+{
+    glutSetWindow(ventana_controles);
+    
+    glClearColor(0.15, 0.15, 0.15, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, 800, 0, 100);
+    
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    
+    //Actualiza el texto del boton de pausa
+    strcpy(botones[0].texto, en_pausa ? "Reanudar" : "Pausa");
+    
+    //Dibuja todos los botones
+    for(int i = 0; i < num_botones; i++)
+        dibuja_boton(&botones[i]);
+    
+    //Cantidad de frames
+    glColor3f(0.8, 0.8, 0.8);
+    glRasterPos2f(450, 70);
+    char info[100];
+
+    sprintf(info, "Frames: %d", cuenta_frames_pila(pila_deshacer));
+
+    for(int i = 0; info[i] != '\0'; i++)
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, info[i]);
+    
+    //Escena
+    if(escena_actual != NULL) 
+    {
+        glRasterPos2f(450, 50);
+        sprintf(info, "Escena: %s", escena_actual->nombre);
+
+        for(int i = 0; info[i] != '\0'; i++)
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, info[i]);
+    }
+    
+    //Estado de ela pelicula
+    glRasterPos2f(450, 30);
+    sprintf(info, "Estado: %s", en_pausa ? "PAUSADO" : "REPRODUCIENDOSE");
+
+    for(int i = 0; info[i] != '\0'; i++)
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, info[i]);
+    
+    glutSwapBuffers();
+}
+
+//Checa si el mouse esta encima del boton
+bool punto_en_boton(Boton *btn, int x, int y) 
+{
+    return (x >= btn->x && x <= btn->x + btn->ancho && y >= btn->y && y <= btn->y + btn->alto);
+}
+
+void mouse_controles(int button, int state, int x, int y) 
+{
+    if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) 
+    {
+        //Convierte coordenadas
+        int y_invertido = 100 - y;
+        
+        //Verifica que botón fue clickeado
+        for(int i = 0; i < num_botones; i++) 
+        {
+            if(punto_en_boton(&botones[i], x, y_invertido)) 
+            {
+                printf("Boton clickeado: %s\n", botones[i].texto);
+                
+                //Ejecuta la accion del boton
+                if(botones[i].accion != NULL)
+                    botones[i].accion();
+                
+                //Actualiza ambas ventanas
+                glutSetWindow(ventana_controles);
+                glutPostRedisplay();
+                glutSetWindow(ventana_principal);
+                glutPostRedisplay();
+                
+                break;
+            }
+        }
+    }
+}
+
+//Controles de movimiento del mouse
+void motion_controles(int x, int y) 
+{
+    int y_invertido = 100 - y;
+    bool cambio = false;
+    
+    for(int i = 0; i < num_botones; i++) 
+    {
+        bool hover_anterior = botones[i].hover;
+        botones[i].hover = punto_en_boton(&botones[i], x, y_invertido);
+        
+        if(hover_anterior != botones[i].hover)
+            cambio = true;
+    }
+    
+    if(cambio) 
+    {
+        glutSetWindow(ventana_controles);
+        glutPostRedisplay();
+    }
+}
+
 void display() 
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1414,27 +1709,86 @@ void display()
         renderiza_dialogos_frame(frame_actual);
     }
     
+    //Muestra el simbolo de de pausa en pantalla
+    if(en_pausa) 
+    {
+        glDisable(GL_TEXTURE_2D);
+        
+        //Fondo semi-transparente oscuro
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(0.0, 0.0, 0.0, 0.5);
+        glBegin(GL_POLYGON);
+        glVertex2f(0, 0);
+        glVertex2f(800, 0);
+        glVertex2f(800, 600);
+        glVertex2f(0, 600);
+        glEnd();
+        
+        //Simbolo de pausa
+        glColor3f(1.0, 1.0, 1.0);
+        
+        //Barra izquierda
+        glBegin(GL_POLYGON);
+        glVertex2f(360, 250);
+        glVertex2f(380, 250);
+        glVertex2f(380, 350);
+        glVertex2f(360, 350);
+        glEnd();
+        
+        //Barra derecha
+        glBegin(GL_POLYGON);
+        glVertex2f(420, 250);
+        glVertex2f(440, 250);
+        glVertex2f(440, 350);
+        glVertex2f(420, 350);
+        glEnd();
+        
+        //Pausa
+        glColor3f(1.0, 1.0, 1.0);
+        glRasterPos2f(360, 220);
+
+        char *texto_pausa = "PAUSA";
+
+        for(int i = 0; texto_pausa[i] != '\0'; i++) 
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, texto_pausa[i]);
+    }
+    
     glutSwapBuffers();
 }
 
 void actualiza(int valor) 
 {
     int tiempo_actual = glutGet(GLUT_ELAPSED_TIME);
-    float delta = (tiempo_actual - ultimo_tiempo) / 1000.0;
+
+    float tiempo = (tiempo_actual - ultimo_tiempo) / 1000.0;
+
     ultimo_tiempo = tiempo_actual;
+    
+    //Si esta en pausa solo actualiza el display sin avanzar frames
+    if(en_pausa) 
+    {
+        glutSetWindow(ventana_principal);
+        glutPostRedisplay();
+        glutSetWindow(ventana_controles);
+        glutPostRedisplay();
+        glutTimerFunc(33, actualiza, 0);
+        return;
+    }
     
     if(escena_actual != NULL && frame_actual != NULL)
     {
-        tiempo_acumulado += delta;
+        tiempo_acumulado += tiempo;
         
-        actualiza_dialogos_frame(frame_actual, delta);
+        //Actualizr dialogos
+        actualiza_dialogos_frame(frame_actual, tiempo);
         
         //Cambia al siguiente frame cuando se cumple la duracion
         if(tiempo_acumulado >= frame_actual->tiempo_duracion) 
         {
             tiempo_acumulado = 0.0;
             
-            //Guardar el frame actual en pila de frames
+            //Guarda el frame actual en pila de frames
             push_pila_frame(pila_deshacer, frame_actual, escena_actual);
             
             frame_actual = frame_actual->sig;
@@ -1445,20 +1799,20 @@ void actualiza(int valor)
                 escena_actual = escena_actual->sig;
 
                 if(escena_actual != NULL) 
-                {
                     frame_actual = escena_actual->primer_frame;
-                } 
                 
                 else 
-                {
-                    puts("FIN");
-                }
+                    printf("FIN DE LA PELICULA");
             }
         }
     }
     
+    glutSetWindow(ventana_principal);
     glutPostRedisplay();
-    glutTimerFunc(33, actualiza, 0); //30 FPS son mas o menos 33ms
+    glutSetWindow(ventana_controles);
+    glutPostRedisplay();
+
+    glutTimerFunc(33, actualiza, 0); //33ms son aprox 30FPS
 }
 
 void keyboard(unsigned char key, int x, int y) 
@@ -1468,23 +1822,23 @@ void keyboard(unsigned char key, int x, int y)
         //Retrocede frame
         case 'r':
         case 'R':
-            if(pila_deshacer != NULL && pila_deshacer->tope != NULL) 
-            {
-                Escena *escena_anterior;
-                frame_actual = pop_pila_frame(pila_deshacer, &escena_anterior);
-                escena_actual = escena_anterior;
-                tiempo_acumulado = 0.0;
-            }
+
+            retroceder();
             break;
 
         case 'p':
         case 'P':
-            puts("Pausa");
+
+            pausa();
+            break;
+
+        case 'x':
+        case 'X':
+            reinicia_pelicula();
             break;
 
         case 27:
-            puts("Saliendo");
-            exit(0);
+            salir();
             break;
     }
 }
@@ -1493,40 +1847,63 @@ int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+    
     glutInitWindowSize(800, 600);
-    glutCreateWindow("El viaje de Mr. Atomix");
+    glutInitWindowPosition(100, 50);
+    ventana_principal = glutCreateWindow("El viaje de Mr. Atomix");
     
     glClearColor(0.5, 0.7, 1.0, 1.0);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
+    glutDisplayFunc(display);
+    glutKeyboardFunc(keyboard);
+    
+    //Ventana de controles
+    glutInitWindowSize(800, 100);
+    glutInitWindowPosition(100, 660);
+    ventana_controles = glutCreateWindow("Controles del Reproductor");
+    
+    glClearColor(0.15, 0.15, 0.15, 1.0);
+    
+    glutDisplayFunc(display_controles);
+    glutMouseFunc(mouse_controles);
+    glutMotionFunc(motion_controles);
+    glutPassiveMotionFunc(motion_controles);
+
     if(!inicializa_audio()) 
     {
-        puts("Error al inicializando audio");
+        puts("Error al inicializar audio");
         return 1;
     }
     
     ajusta_volumen_global(0.7);
     
     ColaRecursos *cola_recursos = crea_cola_recursos();
-    //encola_recurso(cola_recursos, "texturas/fondo.png", 0);
-    //encola_recurso(cola_recursos, "texturas/personaje.png", 0);
-    //encola_recurso(cola_recursos, "audios/dialogo1.wav", 2);
-    
     cargar_recursos(cola_recursos);
 
-    Pelicula *pelicula = crea_pelicula();
+    pelicula_global = crea_pelicula();
+    escena_actual = pelicula_global->frente;
+    
+    if(escena_actual != NULL)
+        frame_actual = escena_actual->primer_frame;
 
-    glutDisplayFunc(display);
-    glutTimerFunc(33, actualiza, 0); //33 ms son aprox 30fps
-    glutKeyboardFunc(keyboard);
+    pila_deshacer = crea_pila_frames();
+    ultimo_tiempo = glutGet(GLUT_ELAPSED_TIME);
+    en_pausa = false;
+    
+    inicializa_botones();
+    
+    //Timer global
+    glutTimerFunc(33, actualiza, 0);
     
     glutMainLoop();
     
     cierra_audio();
     free_cola_recursos(cola_recursos);
-    free_pelicula(pelicula);
+    free_pelicula(pelicula_global);
+    free_pila_frames(pila_deshacer);
     
     return 0;
 }
