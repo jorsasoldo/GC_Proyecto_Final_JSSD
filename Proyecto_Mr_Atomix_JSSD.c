@@ -2244,19 +2244,59 @@ Personaje *crea_mr_atomix()
     return torso;
 }
 
+Personaje *crea_piso() 
+{
+    //Piso es un rectangulo que cubre toda la pantalla
+    Punto *rot_piso = crea_punto(1000, 600.0, 100.0, 0, 0, 0);
+    Personaje *piso = crea_personaje(1000, "piso", rot_piso);
+    free(rot_piso);
+
+    Punto *pts_piso[] = 
+    {
+        crea_punto(1001, 0.0, 0.0, 0, 0, 0),
+        crea_punto(1002, 1200.0, 0.0, 0, 0, 0),
+        crea_punto(1003, 1200.0, 200.0, 0, 0, 0),
+        crea_punto(1004, 0.0, 200.0, 0, 0, 0)
+    };
+    
+    piso->num_puntos = 4;
+    piso->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+    
+    for(int i = 0; i < 4; i++) 
+    {
+        piso->puntos_figura[i] = *pts_piso[i];
+        free(pts_piso[i]);
+    }
+    
+    //Convierte coordenadas a relativas
+    convierte_absolutas_a_relativas_personaje(piso, 0.0, 0.0);
+    
+    return piso;
+}
+
 void visualiza_mr_atomix() 
 {
+    
+    //Crea Mr. Atomix
     Personaje *mr_atomix = crea_mr_atomix();
-    
     NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(1, 1, mr_atomix);
-
     nodo_atomix->pos_x = 600.0;
-    
-    nodo_atomix->pos_y = 350.0;
-    
+    nodo_atomix->pos_y = 145.0;
     nodo_atomix->escala = 28.0;
+
+    //Crea el piso
+    Personaje *piso = crea_piso();
+    NodoJerarquia *nodo_piso = crea_nodo_jerarquia(2, 1, piso);
+    nodo_piso->pos_x = 0.0;
+    nodo_piso->pos_y = 0.0;
+    nodo_piso->escala = 1.0;
+    Frame *frame_test = crea_frame(1, nodo_piso, 5.0);
     
-    Frame *frame_test = crea_frame(1, nodo_atomix, 5.0);
+    agrega_hijo_jerarquia(frame_test->arbol_jerarquia, nodo_atomix);
+    
+    free_pila_renderizado(frame_test->pila_renderizado);
+    frame_test->pila_renderizado = crea_pila_renderizado();
+    inserta_pila_renderizado(frame_test->arbol_jerarquia, frame_test->pila_renderizado);
     
     Escena *escena_test = crea_escena(1, "Test Mr. Atomix");
     agrega_frame_escena(escena_test, frame_test);
