@@ -1698,7 +1698,7 @@ void display()
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0, 800, 0, 600);
+    gluOrtho2D(0, 1200, 0, 1000);
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -1720,8 +1720,8 @@ void display()
         glColor4f(0.0, 0.0, 0.0, 0.5);
         glBegin(GL_POLYGON);
         glVertex2f(0, 0);
-        glVertex2f(800, 0);
-        glVertex2f(800, 600);
+        glVertex2f(1200, 0);
+        glVertex2f(1200, 1000);
         glVertex2f(0, 600);
         glEnd();
         
@@ -1840,6 +1840,35 @@ void keyboard(unsigned char key, int x, int y)
         case 27:
             salir();
             break;
+    }
+}
+
+void convierte_absolutas_a_relativas_personaje(Personaje *parte, double padre_x, double padre_y) 
+{
+    if (parte == NULL) 
+        return;
+    
+    //Guarda las coordenadas absolutas originales del punto de rotacion
+    double mi_x_absoluto = parte->punto_rotacion->x;
+    double mi_y_absoluto = parte->punto_rotacion->y;
+    
+    //Convierte las coordenadas del punto de rotacion a coordenadas relativas
+    parte->punto_rotacion->x -= padre_x;
+    parte->punto_rotacion->y -= padre_y;
+    
+    //Convierte todos los puntos de la figura relativos a su punto de rotacion
+    for (int i = 0; i < parte->num_puntos; i++) 
+    {
+        parte->puntos_figura[i].x -= mi_x_absoluto;
+        parte->puntos_figura[i].y -= mi_y_absoluto;
+    }
+    
+    Personaje *hijo = parte->hijo;
+
+    while (hijo != NULL) 
+    {
+        convierte_absolutas_a_relativas_personaje(hijo, mi_x_absoluto, mi_y_absoluto);
+        hijo = hijo->hermano;
     }
 }
 
