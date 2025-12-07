@@ -2274,31 +2274,241 @@ Personaje *crea_piso()
     return piso;
 }
 
+Personaje *crea_pino() 
+{
+    //Tronco (el cual es la raiz)
+    Punto *rot_tronco = crea_punto(5, 7.9487052932454, 1.608857500911, 0, 0, 0);
+    Personaje *tronco = crea_personaje(16, "tronco_pino", rot_tronco);
+    free(rot_tronco);
+
+    Punto *pts_tronco[] = 
+    {
+        crea_punto(1, 7.0, 0.0, 0, 0, 0),
+        crea_punto(2, 9.0, 0.0, 0, 0, 0),
+        crea_punto(3, 9.0, 3.0, 0, 0, 0),
+        crea_punto(4, 7.0, 3.0, 0, 0, 0)
+    };
+
+    tronco->num_puntos = 4;
+    tronco->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        tronco->puntos_figura[i] = *pts_tronco[i];
+        free(pts_tronco[i]);
+    }
+
+    //hoja1 (el cual es hijo de tronco)
+    Punto *rot_hoja1 = crea_punto(10, 7.9978791971979, 3.7724478420487, 0, 0, 0);
+    Personaje *hoja1 = crea_personaje(17, "hoja1_pino", rot_hoja1);
+    free(rot_hoja1);
+
+    Punto *pts_hoja1[] = 
+    {
+        crea_punto(3, 9.0, 3.0, 0, 0, 0),
+        crea_punto(4, 7.0, 3.0, 0, 0, 0),
+        crea_punto(6, 3.054227098302812, 2.991150583326896, 0, 0, 0),
+        crea_punto(7, 4.84, 4.439074557675965, 0, 0, 0),
+        crea_punto(8, 11.16260135465759, 4.439074557675965, 0, 0, 0),
+        crea_punto(9, 12.513997064050054, 2.9187543846094424, 0, 0, 0)
+    };
+
+    hoja1->num_puntos = 6;
+    hoja1->puntos_figura = (Punto*)malloc(6 * sizeof(Punto));
+
+    for(int i = 0; i < 6; i++) 
+    {
+        hoja1->puntos_figura[i] = *pts_hoja1[i];
+        free(pts_hoja1[i]);
+    }
+
+    //hoja2 (el cual es hijo de hoja1)
+    Punto *rot_hoja2 = crea_punto(13, 7.9978791971979, 5.2403785484755, 0, 0, 0);
+    Personaje *hoja2 = crea_personaje(18, "hoja2_pino", rot_hoja2);
+    free(rot_hoja2);
+
+    Punto *pts_hoja2[] = 
+    {
+        crea_punto(7, 4.84, 4.439074557675965, 0, 0, 0),
+        crea_punto(8, 11.16260135465759, 4.439074557675965, 0, 0, 0),
+        crea_punto(11, 13.237959051224585, 6.007658863220787, 0, 0, 0),
+        crea_punto(12, 2.8129064359113007, 5.983526796981636, 0, 0, 0)
+    };
+
+    hoja2->num_puntos = 4;
+    hoja2->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        hoja2->puntos_figura[i] = *pts_hoja2[i];
+        free(pts_hoja2[i]);
+    }
+
+    //hoja3 (el cual es hijo de hoja2)
+    Punto *rot_hoja3 = crea_punto(18, 8.0, 7.0, 0, 0, 0);
+    Personaje *hoja3 = crea_personaje(19, "hoja3_pino", rot_hoja3);
+    free(rot_hoja3);
+
+    Punto *pts_hoja3[] = 
+    {
+        crea_punto(14, 4.841708898957756, 6.0419402794746135, 0, 0, 0),
+        crea_punto(15, 11.306789987074035, 6.017358222105351, 0, 0, 0),
+        crea_punto(16, 12.85545960133763, 7.910176639538633, 0, 0, 0),
+        crea_punto(17, 2.776816079939629, 8.008504869015686, 0, 0, 0)
+    };
+
+    hoja3->num_puntos = 4;
+    hoja3->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        hoja3->puntos_figura[i] = *pts_hoja3[i];
+        free(pts_hoja3[i]);
+    }
+
+    //hoja4 (el cual es hijo de hoja3)
+    Punto *rot_hoja4 = crea_punto(25, 8.0, 9.0, 0, 0, 0);
+    Personaje *hoja4 = crea_personaje(21, "hoja4_pino", rot_hoja4);
+    free(rot_hoja4);
+
+    Punto *pts_hoja4[] = 
+    {
+        crea_punto(19, 6.0, 8.0, 0, 0, 0),
+        crea_punto(20, 10.0, 8.0, 0, 0, 0),
+        crea_punto(21, 12.00275211022515, 8.786610241381782, 0, 0, 0),
+        crea_punto(22, 10.0, 10.0, 0, 0, 0),
+        crea_punto(23, 6.0, 10.0, 0, 0, 0),
+        crea_punto(24, 4.001009222087615, 8.8121749151458, 0, 0, 0)
+    };
+
+    hoja4->num_puntos = 6;
+    hoja4->puntos_figura = (Punto*)malloc(6 * sizeof(Punto));
+
+    for(int i = 0; i < 6; i++) 
+    {
+        hoja4->puntos_figura[i] = *pts_hoja4[i];
+        free(pts_hoja4[i]);
+    }
+
+    //copa (el cual ees hijo de hoja4)
+    Punto *rot_copa = crea_punto(27, 8.0, 11.0, 0, 0, 0);
+    Personaje *copa = crea_personaje(22, "copa_pino", rot_copa);
+    free(rot_copa);
+
+    Punto *pts_copa[] = 
+    {
+        crea_punto(22, 10.0, 10.0, 0, 0, 0),
+        crea_punto(23, 6.0, 10.0, 0, 0, 0),
+        crea_punto(26, 8.0, 12.0, 0, 0, 0)
+    };
+
+    copa->num_puntos = 3;
+    copa->puntos_figura = (Punto*)malloc(3 * sizeof(Punto));
+
+    for(int i = 0; i < 3; i++) 
+    {
+        copa->puntos_figura[i] = *pts_copa[i];
+        free(pts_copa[i]);
+    }
+
+    //Jerarquia
+    agrega_hijo_personaje(tronco, hoja1);
+    agrega_hijo_personaje(hoja1, hoja2);
+    agrega_hijo_personaje(hoja2, hoja3);
+    agrega_hijo_personaje(hoja3, hoja4);
+    agrega_hijo_personaje(hoja4, copa);
+
+    convierte_absolutas_a_relativas_personaje(tronco, 0.0, 0.0);
+
+    return tronco;
+}
+
+Personaje *crea_balon() 
+{
+    double centro_x = 5.0;
+    double centro_y = 5.0;
+    
+    Punto *rot_balon = crea_punto(50, centro_x, centro_y, 0, 0, 0);
+    Personaje *balon = crea_personaje(20, "balon", rot_balon);
+    free(rot_balon);
+
+    int num_puntos_circulo = 20;
+    double radio_balon = 1.5;
+
+    balon->num_puntos = num_puntos_circulo;
+    balon->puntos_figura = (Punto*)malloc(num_puntos_circulo * sizeof(Punto));
+
+    for(int i = 0; i < num_puntos_circulo; i++) 
+    {
+        double angulo = 2.0 * PI * i / num_puntos_circulo;
+        balon->puntos_figura[i].id = 500 + i;
+        balon->puntos_figura[i].x = centro_x + radio_balon * cos(angulo);
+        balon->puntos_figura[i].y = centro_y + radio_balon * sin(angulo);
+        balon->puntos_figura[i].z = 0;
+        balon->puntos_figura[i].u = 0; 
+        balon->puntos_figura[i].v = 0;
+    }
+    
+    convierte_absolutas_a_relativas_personaje(balon, 0.0, 0.0);
+    return balon;
+}
+
 void visualiza_mr_atomix() 
 {
-    
-    //Crea Mr. Atomix
-    Personaje *mr_atomix = crea_mr_atomix();
-    NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(1, 1, mr_atomix);
-    nodo_atomix->pos_x = 600.0;
-    nodo_atomix->pos_y = 145.0;
-    nodo_atomix->escala = 28.0;
-
-    //Crea el piso
+    //Piso (Pasto)
     Personaje *piso = crea_piso();
-    NodoJerarquia *nodo_piso = crea_nodo_jerarquia(2, 1, piso);
+    NodoJerarquia *nodo_piso = crea_nodo_jerarquia(100, 1, piso); 
+    
     nodo_piso->pos_x = 0.0;
     nodo_piso->pos_y = 0.0;
     nodo_piso->escala = 1.0;
     Frame *frame_test = crea_frame(1, nodo_piso, 5.0);
+
+    //Pino a la derecha
+    Personaje *pino = crea_pino();
+    NodoJerarquia *nodo_pino = crea_nodo_jerarquia(16, 1, pino);
     
+    nodo_pino->pos_x = 690.0; 
+    nodo_pino->pos_y = 145.0; 
+    nodo_pino->escala = 40.0; 
+    
+    agrega_hijo_jerarquia(frame_test->arbol_jerarquia, nodo_pino);
+
+    //Pino a la izq
+    Personaje *pino2 = clona_personaje(pino);
+    NodoJerarquia *nodo_pino2 = crea_nodo_jerarquia(17, 1, pino2);
+    
+    nodo_pino2->pos_x = -100.0;
+    nodo_pino2->pos_y = 145.0; 
+    nodo_pino2->escala = 40.0; 
+    
+    agrega_hijo_jerarquia(frame_test->arbol_jerarquia, nodo_pino2);
+
+    //Balon
+    Personaje *balon = crea_balon();
+    NodoJerarquia *nodo_balon = crea_nodo_jerarquia(20, 1, balon);
+    
+    nodo_balon->pos_x = 590.0;
+    nodo_balon->pos_y = 145.0; 
+    nodo_balon->escala = 28.0; 
+
+    agrega_hijo_jerarquia(frame_test->arbol_jerarquia, nodo_balon);
+
+    //Mr Atomix
+    Personaje *mr_atomix = crea_mr_atomix();
+    NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(1, 1, mr_atomix);
+
+    nodo_atomix->pos_x = 600.0;
+    nodo_atomix->pos_y = 145.0; 
+    nodo_atomix->escala = 28.0;
+
     agrega_hijo_jerarquia(frame_test->arbol_jerarquia, nodo_atomix);
     
     free_pila_renderizado(frame_test->pila_renderizado);
     frame_test->pila_renderizado = crea_pila_renderizado();
     inserta_pila_renderizado(frame_test->arbol_jerarquia, frame_test->pila_renderizado);
     
-    Escena *escena_test = crea_escena(1, "Test Mr. Atomix");
+    Escena *escena_test = crea_escena(1, "Escena 1");
     agrega_frame_escena(escena_test, frame_test);
     
     encola_escena(pelicula_global, escena_test);
