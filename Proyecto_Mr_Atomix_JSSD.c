@@ -1845,32 +1845,34 @@ void keyboard(unsigned char key, int x, int y)
 
 void convierte_absolutas_a_relativas_personaje(Personaje *parte, double padre_x, double padre_y) 
 {
-    if (parte == NULL) 
+    if(parte == NULL) 
         return;
     
     //Guarda las coordenadas absolutas originales del punto de rotacion
-    double mi_x_absoluto = parte->punto_rotacion->x;
-    double mi_y_absoluto = parte->punto_rotacion->y;
+    double x_absoluto = parte->punto_rotacion->x;
+    double y_absoluto = parte->punto_rotacion->y;
     
     //Convierte las coordenadas del punto de rotacion a coordenadas relativas
     parte->punto_rotacion->x -= padre_x;
     parte->punto_rotacion->y -= padre_y;
     
     //Convierte todos los puntos de la figura relativos a su punto de rotacion
-    for (int i = 0; i < parte->num_puntos; i++) 
+    for(int i = 0; i < parte->num_puntos; i++) 
     {
-        parte->puntos_figura[i].x -= mi_x_absoluto;
-        parte->puntos_figura[i].y -= mi_y_absoluto;
+        parte->puntos_figura[i].x -= x_absoluto;
+        parte->puntos_figura[i].y -= y_absoluto;
     }
     
     Personaje *hijo = parte->hijo;
 
-    while (hijo != NULL) 
+    while(hijo != NULL) 
     {
-        convierte_absolutas_a_relativas_personaje(hijo, mi_x_absoluto, mi_y_absoluto);
+        convierte_absolutas_a_relativas_personaje(hijo, x_absoluto, y_absoluto);
         hijo = hijo->hermano;
     }
 }
+
+
 
 int main(int argc, char** argv) 
 {
@@ -1913,6 +1915,7 @@ int main(int argc, char** argv)
     cargar_recursos(cola_recursos);
 
     pelicula_global = crea_pelicula();
+
     escena_actual = pelicula_global->frente;
     
     if(escena_actual != NULL)
