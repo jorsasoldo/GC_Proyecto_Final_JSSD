@@ -1429,16 +1429,30 @@ void retroceder()
 {
     if(pila_deshacer != NULL && pila_deshacer->tope != NULL) 
     {
-        Escena *escena_anterior;
-        frame_actual = pop_pila_frame(pila_deshacer, &escena_anterior);
-        escena_actual = escena_anterior;
-        tiempo_acumulado = 0.0;
+        int frames_retroceder = 60; //retrocede 2s (o sea 60frames ya que esta en 30fps)
+        int frames_retrocedidos = 0;
+        
+        Escena *escena_anterior = escena_actual;
+        Frame *frame_anterior = frame_actual;
+        
+        //Retrocede 2s o hasta que se acabe la pila
+        while(pila_deshacer->tope != NULL && frames_retrocedidos < frames_retroceder) 
+        {
+            frame_anterior = pop_pila_frame(pila_deshacer, &escena_anterior);
+            frames_retrocedidos++;
+        }
+        
+        if(frames_retrocedidos > 0) 
+        {
+            frame_actual = frame_anterior;
+            escena_actual = escena_anterior;
+            tiempo_acumulado = 0.0;
+        }
     }
 
     else 
         puts("No hay frames anteriores para retroceder");
 }
-
 
 void reinicia_pelicula() 
 {
