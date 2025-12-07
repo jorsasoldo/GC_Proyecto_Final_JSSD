@@ -1466,19 +1466,16 @@ void reinicia_pelicula()
         
         en_pausa = false;
         
-        printf("Película reiniciada desde el inicio\n");
-        printf("Escena actual: %s\n", escena_actual->nombre);
+        puts("Pelicula reiniciada desde el inicio");
         
         if(frame_actual != NULL)
             printf("Frame actual: %d\n", frame_actual->id_frame);
     } 
     else 
     {
-        printf("Advertencia: No hay escenas en la película\n");
+        puts("Advertencia: No hay escenas en la pelicula");
         frame_actual = NULL;
     }
-    
-    printf("============================\n\n");
 }
 
 void salir()
@@ -2453,65 +2450,122 @@ Personaje *crea_balon()
     return balon;
 }
 
-void visualiza_mr_atomix() 
+void visualiza_escena1() 
 {
-    //Piso (Pasto)
-    Personaje *piso = crea_piso();
-    NodoJerarquia *nodo_piso = crea_nodo_jerarquia(100, 1, piso); 
+    Escena *escena_animacion = crea_escena(1, "Parque");
     
-    nodo_piso->pos_x = 0.0;
-    nodo_piso->pos_y = 0.0;
-    nodo_piso->escala = 1.0;
-    Frame *frame_test = crea_frame(1, nodo_piso, 5.0);
+    //10 segundos a 30fps son aprox 300 frames
+    //Cada frame dura 1/30 asi que mas o meenos son 0.0333 segundos
+    int num_frames = 300;
+    double duracion_frame = 1.0 / 30.0;
+    
+    for(int f = 0; f < num_frames; f++) 
+    {
+        double t = (double)f / (num_frames - 1);
+        
+        //Piso (Pasto)
+        Personaje *piso = crea_piso();
+        NodoJerarquia *nodo_piso = crea_nodo_jerarquia(100, 1, piso);
+        nodo_piso->pos_x = 0.0;
+        nodo_piso->pos_y = 0.0;
+        nodo_piso->escala = 1.0;
+        
+        //Pino a la derecha
+        Personaje *pino = crea_pino();
+        NodoJerarquia *nodo_pino = crea_nodo_jerarquia(16, 1, pino);
+        nodo_pino->pos_x = 690.0;
+        nodo_pino->pos_y = 145.0;
+        nodo_pino->escala = 40.0;
+        agrega_hijo_jerarquia(nodo_piso, nodo_pino);
+        
+        //Pino a la izquierda
+        Personaje *pino2 = clona_personaje(pino);
+        NodoJerarquia *nodo_pino2 = crea_nodo_jerarquia(17, 1, pino2);
+        nodo_pino2->pos_x = -100.0;
+        nodo_pino2->pos_y = 145.0;
+        nodo_pino2->escala = 40.0;
+        agrega_hijo_jerarquia(nodo_piso, nodo_pino2);
+        
+        //Balon
+        Personaje *balon = crea_balon();
+        NodoJerarquia *nodo_balon = crea_nodo_jerarquia(20, 1, balon);
 
-    //Pino a la derecha
-    Personaje *pino = crea_pino();
-    NodoJerarquia *nodo_pino = crea_nodo_jerarquia(16, 1, pino);
-    
-    nodo_pino->pos_x = 690.0; 
-    nodo_pino->pos_y = 145.0; 
-    nodo_pino->escala = 40.0; 
-    
-    agrega_hijo_jerarquia(frame_test->arbol_jerarquia, nodo_pino);
+        //Movimiento de rebote mas o menos sinusoidal
 
-    //Pino a la izq
-    Personaje *pino2 = clona_personaje(pino);
-    NodoJerarquia *nodo_pino2 = crea_nodo_jerarquia(17, 1, pino2);
-    
-    nodo_pino2->pos_x = -100.0;
-    nodo_pino2->pos_y = 145.0; 
-    nodo_pino2->escala = 40.0; 
-    
-    agrega_hijo_jerarquia(frame_test->arbol_jerarquia, nodo_pino2);
+        double altura_rebote = fabs(sin(t * PI * 4)) * 50.0; //Hace 4 rebotes
 
-    //Balon
-    Personaje *balon = crea_balon();
-    NodoJerarquia *nodo_balon = crea_nodo_jerarquia(20, 1, balon);
-    
-    nodo_balon->pos_x = 590.0;
-    nodo_balon->pos_y = 145.0; 
-    nodo_balon->escala = 28.0; 
+        nodo_balon->pos_x = 200.0 + t * 400.0; //Se mueve de izquierda a derecha
+        nodo_balon->pos_y = 145.0 + altura_rebote;
+        nodo_balon->escala = 28.0;
+        nodo_balon->rot_z = t * 720.0; //Hace 2 rotaciones completas
+        agrega_hijo_jerarquia(nodo_piso, nodo_balon);
+        
+        //Mr. Atomix
+        Personaje *mr_atomix = crea_mr_atomix();
+        NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(1, 1, mr_atomix);
+        
+        //Movimiento horizontal de Mr. Atomix (camina de izquierda a derecha)
+        nodo_atomix->pos_x = 200.0 + t * 800.0;
+        nodo_atomix->pos_y = 145.0;
+        nodo_atomix->escala = 28.0;
+        
+        //Ciclo de caminar (8 ciclos completos en 10 segundos)
+        double ciclo_caminar = sin(t * PI * 16) * 15.0; //Oscilacion de brazos y piernas
+        
+        //Anima brazos
+        Personaje *brazo_izq = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+        Personaje *brazo_der = busca_parte_personaje(mr_atomix, "brazo_derecho");
 
-    agrega_hijo_jerarquia(frame_test->arbol_jerarquia, nodo_balon);
+        if(brazo_izq) 
+            brazo_izq->angulo_actual = ciclo_caminar;
 
-    //Mr Atomix
-    Personaje *mr_atomix = crea_mr_atomix();
-    NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(1, 1, mr_atomix);
+        if(brazo_der) 
+            brazo_der->angulo_actual = -ciclo_caminar;
+        
+        //Anima piernas (hace lo opuesto a los brazos)
+        Personaje *pierna_izq = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+        Personaje *pierna_der = busca_parte_personaje(mr_atomix, "pierna_derecha");
 
-    nodo_atomix->pos_x = 600.0;
-    nodo_atomix->pos_y = 145.0; 
-    nodo_atomix->escala = 28.0;
+        if(pierna_izq) 
+            pierna_izq->angulo_actual = -ciclo_caminar * 0.8;
 
-    agrega_hijo_jerarquia(frame_test->arbol_jerarquia, nodo_atomix);
+        if(pierna_der) 
+            pierna_der->angulo_actual = ciclo_caminar * 0.8;
+        
+        //Anima codos
+        Personaje *codo_izq = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+        Personaje *codo_der = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_izq) 
+            codo_izq->angulo_actual = fabs(ciclo_caminar) * 0.5;
+
+        if(codo_der) 
+            codo_der->angulo_actual = fabs(ciclo_caminar) * 0.5;
+        
+        //Anima rodillas
+        Personaje *rodilla_izq = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+        Personaje *rodilla_der = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_izq) 
+            rodilla_izq->angulo_actual = fabs(ciclo_caminar) * 0.6;
+
+        if(rodilla_der) 
+            rodilla_der->angulo_actual = fabs(ciclo_caminar) * 0.6;
+        
+        //movimiento de cabeza
+        Personaje *cabeza = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza) 
+            cabeza->angulo_actual = sin(t * PI * 8) * 5.0;
+        
+        agrega_hijo_jerarquia(nodo_piso, nodo_atomix);
+        
+        //Crer frame con duración de 1/30 segundo
+        Frame *frame = crea_frame(f + 1, nodo_piso, duracion_frame);
+        agrega_frame_escena(escena_animacion, frame);
+    }
     
-    free_pila_renderizado(frame_test->pila_renderizado);
-    frame_test->pila_renderizado = crea_pila_renderizado();
-    inserta_pila_renderizado(frame_test->arbol_jerarquia, frame_test->pila_renderizado);
-    
-    Escena *escena_test = crea_escena(1, "Escena 1");
-    agrega_frame_escena(escena_test, frame_test);
-    
-    encola_escena(pelicula_global, escena_test);
+    encola_escena(pelicula_global, escena_animacion);
 }
 
 
@@ -2557,7 +2611,7 @@ int main(int argc, char** argv)
 
     pelicula_global = crea_pelicula();
 
-    visualiza_mr_atomix();
+    visualiza_escena1();
 
     escena_actual = pelicula_global->frente;
     
