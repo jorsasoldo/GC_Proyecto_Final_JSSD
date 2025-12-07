@@ -1872,6 +1872,397 @@ void convierte_absolutas_a_relativas_personaje(Personaje *parte, double padre_x,
     }
 }
 
+Personaje *crea_mr_atomix() 
+{
+
+    //Torso (su raiz)
+    Punto *rot_torso = crea_punto(11, 0.0, 11.288829237070836, 0, 0, 0);
+    Personaje *torso = crea_personaje(1, "torso", rot_torso);
+    free(rot_torso);
+
+    Punto *pts_torso[] = 
+    {
+        crea_punto(1, -0.43780011382007067, 14.055403590225414, 0, 0, 0),
+        crea_punto(2, 0.5507693591938506, 13.982176221854012, 0, 0, 0),
+        crea_punto(3, 1.9222321263005, 12.927863898716467, 0, 0, 0),
+        crea_punto(4, 1.9229840215597918, 12.234625900000523, 0, 0, 0),
+        crea_punto(5, 1.9222321263005, 8.927863898716467, 0, 0, 0),
+        crea_punto(6, 0.9584636256010058, 7.679541370359747, 0, 0, 0),
+        crea_punto(7, -0.9729509212840275, 7.748520461319927, 0, 0, 0),
+        crea_punto(8, -2.0777678736994996, 8.927863898716467, 0, 0, 0),
+        crea_punto(9, -2.0777678736994996, 12.240394234879222, 0, 0, 0),
+        crea_punto(10, -2.0777678736994996, 12.927863898716467, 0, 0, 0)
+    };
+
+    torso->num_puntos = 10;
+    torso->puntos_figura = (Punto*)malloc(10 * sizeof(Punto));
+
+    for(int i = 0; i < 10; i++) 
+    {
+        torso->puntos_figura[i] = *pts_torso[i];
+        free(pts_torso[i]);
+    }
+
+    //Cuello (el cual es un hijo de torso)
+    Punto *rot_cuello = crea_punto(14, -0.0639464435353998, 14.524080080243076, 0, 0, 0);
+    Personaje *cuello = crea_personaje(2, "cuello", rot_cuello);
+    free(rot_cuello);
+
+    Punto *pts_cuello[] = 
+    {
+        crea_punto(12, -0.40118642963437146, 15.080586747425041, 0, 0, 0),
+        crea_punto(13, 0.5141556750081478, 15.080586747425041, 0, 0, 0),
+        crea_punto(2, 0.5507693591938506, 13.982176221854012, 0, 0, 0),
+        crea_punto(1, -0.43780011382007067, 14.055403590225414, 0, 0, 0)
+    };
+
+    cuello->num_puntos = 4;
+    cuello->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        cuello->puntos_figura[i] = *pts_cuello[i];
+        free(pts_cuello[i]);
+    }
+
+    //Cabeza (el cual es un hijo de cuello)
+    double cab_x = -0.07776787369949978;
+    double cab_y = 16.927863898716474;
+    Punto *rot_cabeza = crea_punto(15, cab_x, cab_y, 0, 0, 0);
+    Personaje *cabeza = crea_personaje(3, "cabeza", rot_cabeza);
+    free(rot_cabeza);
+
+    //Genera circulo para la cabeza
+    int num_puntos_circulo = 20;
+    double radio_cabeza = 1.95;
+    cabeza->num_puntos = num_puntos_circulo;
+    cabeza->puntos_figura = (Punto*)malloc(num_puntos_circulo * sizeof(Punto));
+
+    for(int i = 0; i < num_puntos_circulo; i++) 
+    {
+        double angulo = 2.0 * PI * i / num_puntos_circulo;
+        cabeza->puntos_figura[i].id = 100 + i;
+        cabeza->puntos_figura[i].x = cab_x + radio_cabeza * cos(angulo);
+        cabeza->puntos_figura[i].y = cab_y + radio_cabeza * sin(angulo);
+        cabeza->puntos_figura[i].z = 0;
+        cabeza->puntos_figura[i].u = 0; cabeza->puntos_figura[i].v = 0;
+    }
+
+    //Brazo izquierdo (el cual es un hijo de torso)
+    Punto *rot_brazo_izq = crea_punto(18, -2.0777678736994996, 12.592281658715061, 0, 0, 0);
+    Personaje *brazo_izq = crea_personaje(4, "brazo_izquierdo", rot_brazo_izq);
+    free(rot_brazo_izq);
+
+    Punto *pts_brazo_izq[] = 
+    {
+        crea_punto(10, -2.0777678736994996, 12.927863898716467, 0, 0, 0),
+        crea_punto(9, -2.0777678736994996, 12.240394234879222, 0, 0, 0),
+        crea_punto(16, -4.533740818548646, 12.26854522878609, 0, 0, 0),
+        crea_punto(17, -4.5620494136876015, 12.970116970194763, 0, 0, 0)
+    };
+
+    brazo_izq->num_puntos = 4;
+    brazo_izq->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        brazo_izq->puntos_figura[i] = *pts_brazo_izq[i];
+        free(pts_brazo_izq[i]);
+    }
+
+    //Codo izquierdo (el cual es un hijo de brazo izquierdo)
+    Punto *rot_codo_izq = crea_punto(21, -4.547483304863437, 12.620530358414843, 0, 0, 0);
+    Personaje *codo_izq = crea_personaje(5, "codo_izquierdo", rot_codo_izq);
+    free(rot_codo_izq);
+
+    Punto *pts_codo_izq[] = 
+    {
+        crea_punto(17, -4.5620494136876015, 12.970116970194763, 0, 0, 0),
+        crea_punto(16, -4.533740818548646, 12.26854522878609, 0, 0, 0),
+        crea_punto(19, -6.091490840224733, 12.241811528986597, 0, 0, 0),
+        crea_punto(20, -6.077767873699498, 12.927863898716467, 0, 0, 0)
+    };
+
+    codo_izq->num_puntos = 4;
+    codo_izq->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++)
+    {
+        codo_izq->puntos_figura[i] = *pts_codo_izq[i];
+        free(pts_codo_izq[i]);
+    }
+
+    //Mano izquierda (la cual es hija de codo izquiedo)
+    double mano_izq_x = -6.53188255196353;
+    double mano_izq_y = 12.643092738069981;
+    Punto *rot_mano_izq = crea_punto(22, mano_izq_x, mano_izq_y, 0, 0, 0);
+    Personaje *mano_izq = crea_personaje(6, "mano_izquierda", rot_mano_izq);
+    free(rot_mano_izq);
+
+    double radio_mano = 0.6;
+    mano_izq->num_puntos = num_puntos_circulo;
+    mano_izq->puntos_figura = (Punto*)malloc(num_puntos_circulo * sizeof(Punto));
+
+    for(int i = 0; i < num_puntos_circulo; i++) 
+    {
+        double angulo = 2.0 * PI * i / num_puntos_circulo;
+        mano_izq->puntos_figura[i].id = 200 + i;
+        mano_izq->puntos_figura[i].x = mano_izq_x + radio_mano * cos(angulo);
+        mano_izq->puntos_figura[i].y = mano_izq_y + radio_mano * sin(angulo);
+        mano_izq->puntos_figura[i].z = 0;
+        mano_izq->puntos_figura[i].u = 0; mano_izq->puntos_figura[i].v = 0;
+    }
+
+    //Brazo derecho (el cual es hijo de torso)
+    Punto *rot_brazo_der = crea_punto(25, 1.9222321263005, 12.591594581118464, 0, 0, 0);
+    Personaje *brazo_der = crea_personaje(7, "brazo_derecho", rot_brazo_der);
+    free(rot_brazo_der);
+
+    Punto *pts_brazo_der[] = 
+    {
+        crea_punto(3, 1.9222321263005, 12.927863898716467, 0, 0, 0),
+        crea_punto(4, 1.9229840215597918, 12.234625900000523, 0, 0, 0),
+        crea_punto(23, 4.523755841133346, 12.19382947930133, 0, 0, 0),
+        crea_punto(24, 4.482959420434158, 12.917965946712009, 0, 0, 0)
+    };
+
+    brazo_der->num_puntos = 4;
+    brazo_der->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        brazo_der->puntos_figura[i] = *pts_brazo_der[i];
+        free(pts_brazo_der[i]);
+    }
+
+    //Codo derecho (el cual es hijo de brazo derecho)
+    Punto *rot_codo_der = crea_punto(28, 4.503357630783748, 12.540599055244472, 0, 0, 0);
+    Personaje *codo_der = crea_personaje(8, "codo_derecho", rot_codo_der);
+    free(rot_codo_der);
+
+    Punto *pts_codo_der[] = 
+    {
+        crea_punto(24, 4.482959420434158, 12.917965946712009, 0, 0, 0),
+        crea_punto(23, 4.523755841133346, 12.19382947930133, 0, 0, 0),
+        crea_punto(26, 6.41879752117055, 12.22246360524533, 0, 0, 0),
+        crea_punto(27, 6.395461967885172, 12.922530203806797, 0, 0, 0)
+    };
+
+    codo_der->num_puntos = 4;
+    codo_der->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for (int i = 0; i < 4; i++) 
+    {
+        codo_der->puntos_figura[i] = *pts_codo_der[i];
+        free(pts_codo_der[i]);
+    }
+
+    //Mano derecha (la cual es hija de codo derecho)
+    double mano_der_x = 6.792166373736666;
+    double mano_der_y = 12.584164681168756;
+    Punto *rot_mano_der = crea_punto(29, mano_der_x, mano_der_y, 0, 0, 0);
+    Personaje *mano_der = crea_personaje(9, "mano_derecha", rot_mano_der);
+    free(rot_mano_der);
+
+    mano_der->num_puntos = num_puntos_circulo;
+    mano_der->puntos_figura = (Punto*)malloc(num_puntos_circulo * sizeof(Punto));
+
+    for(int i = 0; i < num_puntos_circulo; i++)
+    {
+        double angulo = 2.0 * PI * i / num_puntos_circulo;
+        mano_der->puntos_figura[i].id = 300 + i;
+        mano_der->puntos_figura[i].x = mano_der_x + radio_mano * cos(angulo);
+        mano_der->puntos_figura[i].y = mano_der_y + radio_mano * sin(angulo);
+        mano_der->puntos_figura[i].z = 0;
+        mano_der->puntos_figura[i].u = 0; mano_der->puntos_figura[i].v = 0;
+    }
+
+    //Pierna izquierda (la cual es hija de torso)
+    Punto *rot_pierna_izq = crea_punto(33, -1.5321251454883669, 8.345414318021627, 0, 0, 0);
+    Personaje *pierna_izq = crea_personaje(10, "pierna_izquierda", rot_pierna_izq);
+    free(rot_pierna_izq);
+
+    Punto *pts_pierna_izq[] = 
+    {
+        crea_punto(8, -2.0777678736994996, 8.927863898716467, 0, 0, 0),
+        crea_punto(30, -2.0777678736994996, 5.0, 0, 0, 0),
+        crea_punto(31, -0.7551282629462819, 5.043136692795641, 0, 0, 0),
+        crea_punto(32, -0.27845504265492366, 7.727033019779604, 0, 0, 0),
+        crea_punto(7, -0.9729509212840275, 7.748520461319927, 0, 0, 0)
+    };
+
+    pierna_izq->num_puntos = 5;
+    pierna_izq->puntos_figura = (Punto*)malloc(5 * sizeof(Punto));
+
+    for(int i = 0; i < 5; i++) 
+    {
+        pierna_izq->puntos_figura[i] = *pts_pierna_izq[i];
+        free(pts_pierna_izq[i]);
+    }
+
+    //Rodilla izquierda (la cuak es hija de pierna izquierda)
+    Punto *rot_rodilla_izq = crea_punto(36, -1.4808743925708157, 5.012202476226791, 0, 0, 0);
+    Personaje *rodilla_izq = crea_personaje(11, "rodilla_izquierda", rot_rodilla_izq);
+    free(rot_rodilla_izq);
+
+    Punto *pts_rodilla_izq[] = 
+    {
+        crea_punto(30, -2.0777678736994996, 5.0, 0, 0, 0),
+        crea_punto(31, -0.7551282629462819, 5.043136692795641, 0, 0, 0),
+        crea_punto(34, -1.1187852996750036, 2.995575085366731, 0, 0, 0),
+        crea_punto(35, -2.0777678736994996, 2.927863898716467, 0, 0, 0)
+    };
+
+    rodilla_izq->num_puntos = 4;
+    rodilla_izq->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        rodilla_izq->puntos_figura[i] = *pts_rodilla_izq[i];
+        free(pts_rodilla_izq[i]);
+    }
+
+    //Pie izquierdo (el cual es hijo de rodilla izquierda)
+    Punto *rot_pie_izq = crea_punto(39, -1.89092548863924, 2.4695700703988432, 0, 0, 0);
+    Personaje *pie_izq = crea_personaje(12, "pie_izquierdo", rot_pie_izq);
+    free(rot_pie_izq);
+
+    Punto *pts_pie_izq[] = 
+    {
+        crea_punto(34, -1.1187852996750036, 2.995575085366731, 0, 0, 0),
+        crea_punto(35, -2.0777678736994996, 2.927863898716467, 0, 0, 0),
+        crea_punto(37, -2.6884073677300786, 2.353724639400469, 0, 0, 0),
+        crea_punto(38, -1.631210196284186, 1.8985425239168174, 0, 0, 0)
+    };
+
+    pie_izq->num_puntos = 4;
+    pie_izq->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        pie_izq->puntos_figura[i] = *pts_pie_izq[i];
+        free(pts_pie_izq[i]);
+    }
+
+    //Pierna derecha (la cual es hija de torso)
+    Punto *rot_pierna_der = crea_punto(43, 1.3401846801530235, 8.17396611198548, 0, 0, 0);
+    Personaje *pierna_der = crea_personaje(13, "pierna_derecha", rot_pierna_der);
+    free(rot_pierna_der);
+
+    Punto *pts_pierna_der[] = 
+    {
+        crea_punto(5, 1.9222321263005, 8.927863898716467, 0, 0, 0),
+        crea_punto(40, 2.101689927946859, 5.0046515582985185, 0, 0, 0),
+        crea_punto(41, 0.690626408623049, 4.996745553846009, 0, 0, 0),
+        crea_punto(42, 0.030053601124750435, 7.702592052454861, 0, 0, 0),
+        crea_punto(6, 0.9584636256010058, 7.679541370359747, 0, 0, 0)
+    };
+
+    pierna_der->num_puntos = 5;
+    pierna_der->puntos_figura = (Punto*)malloc(5 * sizeof(Punto));
+
+    for(int i = 0; i < 5; i++) 
+    {
+        pierna_der->puntos_figura[i] = *pts_pierna_der[i];
+        free(pts_pierna_der[i]);
+    }
+
+    //Rodilla derecha (la cual es hija de pierna derecha)
+    Punto *rot_rodilla_der = crea_punto(46, 1.5382199240784127, 4.995241272200672, 0, 0, 0);
+    Personaje *rodilla_der = crea_personaje(14, "rodilla_derecha", rot_rodilla_der);
+    free(rot_rodilla_der);
+
+
+    Punto *pts_rodilla_der[] = 
+    {
+        crea_punto(40, 2.101689927946859, 5.0046515582985185, 0, 0, 0),
+        crea_punto(41, 0.690626408623049, 4.996745553846009, 0, 0, 0),
+        crea_punto(44, 1.1852246849682402, 2.9660364958200223, 0, 0, 0),
+        crea_punto(45, 2.189536729556298, 3.0841908540068665, 0, 0, 0)
+    };
+
+    rodilla_der->num_puntos = 4;
+    rodilla_der->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        rodilla_der->puntos_figura[i] = *pts_rodilla_der[i];
+        free(pts_rodilla_der[i]);
+    }
+
+    //Pie derecho (el cual es hijo de pierna derecha)
+    Punto *rot_pie_der = crea_punto(49, 1.9237479839831515, 2.5337938747015727, 0, 0, 0);
+    Personaje *pie_der = crea_personaje(15, "pie_derecho", rot_pie_der);
+    free(rot_pie_der);
+
+    Punto *pts_pie_der[] = 
+    {
+        crea_punto(44, 1.1852246849682402, 2.9660364958200223, 0, 0, 0),
+        crea_punto(45, 2.189536729556298, 3.0841908540068665, 0, 0, 0),
+        crea_punto(47, 2.9352942526001597, 2.544607462022646, 0, 0, 0),
+        crea_punto(48, 1.3935483775748987, 1.9572757001082564, 0, 0, 0)
+    };
+
+    pie_der->num_puntos = 4;
+    pie_der->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        pie_der->puntos_figura[i] = *pts_pie_der[i];
+        free(pts_pie_der[i]);
+    }
+
+    //Jerarquia
+
+    //Torso -> Cuello -> Cabeza
+    agrega_hijo_personaje(torso, cuello);
+    agrega_hijo_personaje(cuello, cabeza);
+    
+    //Torso -> Brazo_izq -> Codo_izq -> Mano_izq
+    agrega_hijo_personaje(torso, brazo_izq);
+    agrega_hijo_personaje(brazo_izq, codo_izq);
+    agrega_hijo_personaje(codo_izq, mano_izq);
+    
+    //Torso -> Brazo_der -> Codo_der -> Mano_der
+    agrega_hijo_personaje(torso, brazo_der);
+    agrega_hijo_personaje(brazo_der, codo_der);
+    agrega_hijo_personaje(codo_der, mano_der);
+    
+    //Torso -> Pierna_izq -> Rodilla_izq -> Pie_izq
+    agrega_hijo_personaje(torso, pierna_izq);
+    agrega_hijo_personaje(pierna_izq, rodilla_izq);
+    agrega_hijo_personaje(rodilla_izq, pie_izq);
+    
+    //Torso -> Pierna_der -> Rodilla_der -> Pie_der
+    agrega_hijo_personaje(torso, pierna_der);
+    agrega_hijo_personaje(pierna_der, rodilla_der);
+    agrega_hijo_personaje(rodilla_der, pie_der);
+
+    //Convierte las coordenadas a relativas
+    convierte_absolutas_a_relativas_personaje(torso, 0.0, 0.0);
+
+    return torso;
+}
+
+void visualiza_mr_atomix() 
+{
+    Personaje *mr_atomix = crea_mr_atomix();
+    
+    NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(1, 1, mr_atomix);
+
+    nodo_atomix->pos_x = 600.0;
+    
+    nodo_atomix->pos_y = 350.0;
+    
+    nodo_atomix->escala = 28.0;
+    
+    Frame *frame_test = crea_frame(1, nodo_atomix, 5.0);
+    
+    Escena *escena_test = crea_escena(1, "Test Mr. Atomix");
+    agrega_frame_escena(escena_test, frame_test);
+    
+    encola_escena(pelicula_global, escena_test);
+}
 
 
 int main(int argc, char** argv) 
@@ -1915,6 +2306,8 @@ int main(int argc, char** argv)
     cargar_recursos(cola_recursos);
 
     pelicula_global = crea_pelicula();
+
+    visualiza_mr_atomix();
 
     escena_actual = pelicula_global->frente;
     
