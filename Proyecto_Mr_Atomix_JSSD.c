@@ -116,6 +116,7 @@ typedef struct Dialogo
 {
     char lineas[5][100]; 
     int num_lineas;
+    int total_caracteres;
     Audio *audio;
     float tiempo_mostrado;
     bool activo;
@@ -413,10 +414,12 @@ Dialogo *crea_dialogo(int n, char *textos[], Audio *audio)
         n = 5;
     
     dialogo->num_lineas = n;
+    dialogo->total_caracteres = 0;
     
     for(int i = 0; i < n; i++) 
     {
         strcpy(dialogo->lineas[i], textos[i]);
+        dialogo->total_caracteres += strlen(textos[i]);
     }
 
     dialogo->audio = audio;
@@ -498,28 +501,45 @@ void dibuja_burbuja_dialogo(Personaje *personaje)
         return;
     
     Dialogo *dialogo = personaje->dialogo;
+
+    //Tiempo para mostrar todo el texto
+    float tiempo_total_escritura = 7.0;
+    int caracteres_a_mostrar = 0;
+
+    if(dialogo->tiempo_mostrado >= tiempo_total_escritura) 
+    {
+        //Ya paso el tiempo muestra todo
+        caracteres_a_mostrar = dialogo->total_caracteres;
+    } 
+
+    else 
+    {
+        //Calcula cuantos caracteres mostrar basado en el tiempo usando regla de 3
+        float porcentaje = dialogo->tiempo_mostrado / tiempo_total_escritura;
+        caracteres_a_mostrar = (int)(porcentaje * dialogo->total_caracteres);
+    }
     
-    //Escala para que se vea en pantalla
-    float escala_inversa = 1.0 / 28.0; 
+    if(caracteres_a_mostrar <= 0)
+        return;
     
     glPushMatrix(); 
     
-    glTranslatef(personaje->punto_rotacion->x + 13.5, personaje->punto_rotacion->y + 12.0, 0);
-    glScalef(escala_inversa, escala_inversa, 1.0);
+    //Posicionarla burbuja sobre el personaje
+    glTranslatef(15.0, 23.5, 0);
 
-    float ancho = 400.0;
-    float alto_linea = 25.0;
-    float alto = 40.0 + (dialogo->num_lineas * alto_linea);
+    float ancho = 15.0;
+    float alto_linea = 1.2;
+    float alto = 2.0 + (dialogo->num_lineas * alto_linea);
 
     glDisable(GL_TEXTURE_2D);
     
     //Sombra
     glColor4f(0.0, 0.0, 0.0, 0.3);
     glBegin(GL_POLYGON);
-    glVertex2f(-ancho/2 + 4, -alto/2 - 4);
-    glVertex2f(ancho/2 + 4, -alto/2 - 4);
-    glVertex2f(ancho/2 + 4, alto/2 - 4);
-    glVertex2f(-ancho/2 + 4, alto/2 - 4);
+    glVertex2f(-ancho/2 + 0.2, -alto/2 - 0.2);
+    glVertex2f(ancho/2 + 0.2, -alto/2 - 0.2);
+    glVertex2f(ancho/2 + 0.2, alto/2 - 0.2);
+    glVertex2f(-ancho/2 + 0.2, alto/2 - 0.2);
     glEnd();
     
     //Fondo blanco
@@ -544,40 +564,56 @@ void dibuja_burbuja_dialogo(Personaje *personaje)
     //Pico de la burbuja
     glBegin(GL_TRIANGLES);
     glColor3f(1.0, 1.0, 1.0); 
-    glVertex2f(-10, -alto/2);
-    glVertex2f(0, -alto/2 - 20);
-    glVertex2f(10, -alto/2);
+    glVertex2f(-0.5, -alto/2);
+    glVertex2f(0, -alto/2 - 1.0);
+    glVertex2f(0.5, -alto/2);
     glEnd();
     
     //Contorno del pico
     glColor3f(0.0, 0.0, 0.0);
     glBegin(GL_LINE_STRIP);
-    glVertex2f(-10, -alto/2);
-    glVertex2f(0, -alto/2 - 20);
-    glVertex2f(10, -alto/2);
+    glVertex2f(-0.5, -alto/2);
+    glVertex2f(0, -alto/2 - 1.0);
+    glVertex2f(0.5, -alto/2);
     glEnd();
     
     glColor3f(0.0, 0.0, 0.0);
     
-    //Calcula donde empezar a escribir
-    float y_ini = (alto / 2.0) - 25.0; 
+    float escala_texto = 0.01;
+    float y_ini = (alto / 2.0) - 1.0; 
+    int contador_global = 0;
     
+    //Dibuja cada linea con efecto maquina de escribir
     for(int i = 0; i < dialogo->num_lineas; i++) 
     {
-        //Calcula ancho del texto actual para centrarlo
-        int ancho_texto_actual = 0;
-
-        for(int j = 0; dialogo->lineas[i][j] != '\0'; j++)
-            ancho_texto_actual += glutBitmapWidth(GLUT_BITMAP_HELVETICA_12, dialogo->lineas[i][j]);
-        
-        float x_pos = -ancho/2 + 20.0;
-
+        float x_pos = -ancho/2 + 0.5;
         float y_pos = y_ini - (i * alto_linea);
         
-        glRasterPos2f(x_pos, y_pos);
+        glPushMatrix();
+        glTranslatef(x_pos, y_pos, 0);
+        glScalef(escala_texto, escala_texto, 1.0);
+        
+        glRasterPos2f(0, 0);
 
+        //Dibuja solo los caracteres que deben estar visibles
         for(int j = 0; dialogo->lineas[i][j] != '\0'; j++) 
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, dialogo->lineas[i][j]);
+        {
+            if(contador_global < caracteres_a_mostrar) 
+            {
+                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, dialogo->lineas[i][j]);
+                contador_global++;
+            } 
+
+            else 
+            {
+                glPopMatrix();
+                glPopMatrix();
+                glLineWidth(1.0);
+                return;
+            }
+        }
+        
+        glPopMatrix();
     }
     
     glPopMatrix(); 
@@ -2647,7 +2683,7 @@ Personaje *crea_balon()
 void visualiza_escena1() 
 {
     Escena *escena_animacion = crea_escena(1, "Parque");
-    
+  
     //10 segundos a 30fps son aprox 300 frames
     //Cada frame dura 1/30 asi que mas o meenos son 0.0333 segundos
     int num_frames = 300;
@@ -2697,17 +2733,38 @@ void visualiza_escena1()
         //Mr. Atomix
         Personaje *mr_atomix = crea_mr_atomix();
 
-        char *dialogos1[] = 
+        if(f < 240) 
         {
-            "Hola amigos! Soy Mr. Atomix.",
-            "Hoy vamos a ver que tan grande",
-            "y que tan pequeno es nuestro universo.",
-            "Vamos abajo!"
-        };
-        
-        Dialogo *dialogo_atomix = crea_dialogo(4, dialogos1, NULL);
-        
-        muestra_dialogo(mr_atomix, dialogo_atomix);
+            char *dialogos1[] = 
+            {
+                "Hola amigos! Soy Mr. Atomix.",
+                "Hoy vamos a ver que tan grande",
+                "y que tan pequeno es",
+                "nuestro universo. Vamos abajo!"
+            };
+            
+            Dialogo *dialogo_frame = (Dialogo*)malloc(sizeof(Dialogo));
+            
+            dialogo_frame->num_lineas = 4;
+            dialogo_frame->total_caracteres = 0;
+            
+            for(int i = 0; i < 4; i++) 
+            {
+                strcpy(dialogo_frame->lineas[i], dialogos1[i]);
+                dialogo_frame->total_caracteres += strlen(dialogos1[i]);
+            }
+            
+            dialogo_frame->audio = NULL;
+            dialogo_frame->activo = true;
+            
+            dialogo_frame->tiempo_mostrado = f * duracion_frame;
+            
+            mr_atomix->dialogo = dialogo_frame;
+        } 
+
+        else 
+            mr_atomix->dialogo = NULL;
+
 
         NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(1, 1, mr_atomix);
         
