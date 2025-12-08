@@ -114,7 +114,8 @@ typedef struct Audio
 
 typedef struct Dialogo 
 {
-    char texto[500];
+    char lineas[5][100]; 
+    int num_lineas;
     Audio *audio;
     float tiempo_mostrado;
     bool activo;
@@ -185,7 +186,7 @@ typedef struct Camara
     double objetivo_y;
     double objetivo_zoom;
     double suavidad; //Velocidad con la que sigue la camara
-} Camara;
+}Camara;
 
 Camara camara_global;
 bool camara_sigue_personaje = true;
@@ -401,14 +402,23 @@ void ajusta_volumen_global(float volumen)
     ma_engine_set_volume(&motor_audio, volumen);
 }
 
-Dialogo *crea_dialogo(char *texto, Audio *audio) 
+Dialogo *crea_dialogo(int n, char *textos[], Audio *audio) 
 {
     Dialogo *dialogo = (Dialogo*)malloc(sizeof(Dialogo));
 
     if(dialogo == NULL)
         return NULL;
-        
-    strcpy(dialogo->texto, texto);
+    
+    if(n > 5) 
+        n = 5;
+    
+    dialogo->num_lineas = n;
+    
+    for(int i = 0; i < n; i++) 
+    {
+        strcpy(dialogo->lineas[i], textos[i]);
+    }
+
     dialogo->audio = audio;
     dialogo->tiempo_mostrado = 0.0;
     dialogo->activo = false;
@@ -432,8 +442,6 @@ void muestra_dialogo(Personaje *personaje, Dialogo *dialogo)
     
     if(dialogo->audio != NULL && dialogo->audio->cargado) 
         reproduce_audio(dialogo->audio);
-    
-    printf("%s dice: \"%s\"\n", personaje->nombre, dialogo->texto);
 }
 
 void oculta_dialogo(Personaje *personaje) 
@@ -468,7 +476,7 @@ void actualiza_dialogo(Personaje *personaje, float tiempo)
     
     else 
     {
-        if (dialogo->tiempo_mostrado >= 3.0)
+        if(dialogo->tiempo_mostrado >= 15.0)
             oculta_dialogo(personaje);
     }
 }
@@ -491,97 +499,118 @@ void dibuja_burbuja_dialogo(Personaje *personaje)
     
     Dialogo *dialogo = personaje->dialogo;
     
-    float pos_x = personaje->punto_rotacion->x;
-    float pos_y = personaje->punto_rotacion->y + 100;
-    float ancho = 220;
-    float alto = 70;
+    //Escala para que se vea en pantalla
+    float escala_inversa = 1.0 / 28.0; 
     
+    glPushMatrix(); 
+    
+    glTranslatef(personaje->punto_rotacion->x + 13.5, personaje->punto_rotacion->y + 12.0, 0);
+    glScalef(escala_inversa, escala_inversa, 1.0);
+
+    float ancho = 400.0;
+    float alto_linea = 25.0;
+    float alto = 40.0 + (dialogo->num_lineas * alto_linea);
+
     glDisable(GL_TEXTURE_2D);
     
     //Sombra
     glColor4f(0.0, 0.0, 0.0, 0.3);
     glBegin(GL_POLYGON);
-    glVertex2f(pos_x - ancho/2 + 2, pos_y - alto/2 - 2);
-    glVertex2f(pos_x + ancho/2 + 2, pos_y - alto/2 - 2);
-    glVertex2f(pos_x + ancho/2 + 2, pos_y + alto/2 - 2);
-    glVertex2f(pos_x - ancho/2 + 2, pos_y + alto/2 - 2);
-    glEnd();
-    
-    //Borde
-    glColor3f(0.0, 0.0, 0.0);
-    glLineWidth(2.0);
-    glBegin(GL_LINE_LOOP);
-    glVertex2f(pos_x - ancho/2, pos_y - alto/2);
-    glVertex2f(pos_x + ancho/2, pos_y - alto/2);
-    glVertex2f(pos_x + ancho/2, pos_y + alto/2);
-    glVertex2f(pos_x - ancho/2, pos_y + alto/2);
+    glVertex2f(-ancho/2 + 4, -alto/2 - 4);
+    glVertex2f(ancho/2 + 4, -alto/2 - 4);
+    glVertex2f(ancho/2 + 4, alto/2 - 4);
+    glVertex2f(-ancho/2 + 4, alto/2 - 4);
     glEnd();
     
     //Fondo blanco
     glColor3f(1.0, 1.0, 1.0);
     glBegin(GL_POLYGON);
-    glVertex2f(pos_x - ancho/2, pos_y - alto/2);
-    glVertex2f(pos_x + ancho/2, pos_y - alto/2);
-    glVertex2f(pos_x + ancho/2, pos_y + alto/2);
-    glVertex2f(pos_x - ancho/2, pos_y + alto/2);
+    glVertex2f(-ancho/2, -alto/2);
+    glVertex2f(ancho/2, -alto/2);
+    glVertex2f(ancho/2, alto/2);
+    glVertex2f(-ancho/2, alto/2);
     glEnd();
     
-    //Pico
+    //Borde negro
+    glColor3f(0.0, 0.0, 0.0);
+    glLineWidth(2.0);
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(-ancho/2, -alto/2);
+    glVertex2f(ancho/2, -alto/2);
+    glVertex2f(ancho/2, alto/2);
+    glVertex2f(-ancho/2, alto/2);
+    glEnd();
+    
+    //Pico de la burbuja
+    glBegin(GL_TRIANGLES);
+    glColor3f(1.0, 1.0, 1.0); 
+    glVertex2f(-10, -alto/2);
+    glVertex2f(0, -alto/2 - 20);
+    glVertex2f(10, -alto/2);
+    glEnd();
+    
+    //Contorno del pico
     glColor3f(0.0, 0.0, 0.0);
     glBegin(GL_LINE_STRIP);
-    glVertex2f(pos_x - 15, pos_y - alto/2);
-    glVertex2f(pos_x, pos_y - alto/2 - 20);
-    glVertex2f(pos_x + 5, pos_y - alto/2);
+    glVertex2f(-10, -alto/2);
+    glVertex2f(0, -alto/2 - 20);
+    glVertex2f(10, -alto/2);
     glEnd();
     
-    glColor3f(1.0, 1.0, 1.0);
-    glBegin(GL_TRIANGLES);
-    glVertex2f(pos_x - 15, pos_y - alto/2);
-    glVertex2f(pos_x, pos_y - alto/2 - 20);
-    glVertex2f(pos_x + 5, pos_y - alto/2);
-    glEnd();
-    
-    //Texto
     glColor3f(0.0, 0.0, 0.0);
-    dibuja_texto(dialogo->texto, pos_x - ancho/2 + 10, pos_y + 10);
     
-    //Indica voz activa
-    if(dialogo->audio != NULL && dialogo->audio->reproduciendo) 
+    //Calcula donde empezar a escribir
+    float y_ini = (alto / 2.0) - 25.0; 
+    
+    for(int i = 0; i < dialogo->num_lineas; i++) 
     {
-        float pulso = 0.5 + 0.5 * sin(dialogo->tiempo_mostrado * 10);
-        float radio = 4.0 + pulso * 2.0;
+        //Calcula ancho del texto actual para centrarlo
+        int ancho_texto_actual = 0;
+
+        for(int j = 0; dialogo->lineas[i][j] != '\0'; j++)
+            ancho_texto_actual += glutBitmapWidth(GLUT_BITMAP_HELVETICA_12, dialogo->lineas[i][j]);
         
-        glColor3f(0.0, 1.0, 0.0);
-        glBegin(GL_POLYGON);
+        float x_pos = -ancho/2 + 20.0;
 
-        for(int i = 0; i < 20; i++) 
-        {
-            float angulo = 2.0 * PI * i / 20;
-            glVertex2f(pos_x + ancho/2 - 15 + radio * cos(angulo), pos_y + alto/2 - 10 + radio * sin(angulo));
-        }
+        float y_pos = y_ini - (i * alto_linea);
+        
+        glRasterPos2f(x_pos, y_pos);
 
-        glEnd();
+        for(int j = 0; dialogo->lineas[i][j] != '\0'; j++) 
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, dialogo->lineas[i][j]);
     }
     
+    glPopMatrix(); 
     glLineWidth(1.0);
 }
 
 void renderiza_dialogos_jerarquia(NodoJerarquia *nodo) {
     if(nodo == NULL || !nodo->activo)
         return;
+
+    glPushMatrix();
+
+    glTranslatef(nodo->pos_x, nodo->pos_y, nodo->pos_z);
+    glRotatef(nodo->rot_z, 0.0, 0.0, 1.0);
+    glScalef(nodo->escala, nodo->escala, nodo->escala);
     
-    if(nodo->tipo == 1 && nodo->dato != NULL) {
+    if(nodo->tipo == 1 && nodo->dato != NULL) 
+    {
         Personaje *personaje = (Personaje*)nodo->dato;
-        if(personaje->dialogo != NULL && personaje->dialogo->activo) {
+        if(personaje->dialogo != NULL && personaje->dialogo->activo) 
+        {
             dibuja_burbuja_dialogo(personaje);
         }
     }
     
     NodoJerarquia *hijo = nodo->hijo;
-    while(hijo != NULL) {
+    while(hijo != NULL) 
+    {
         renderiza_dialogos_jerarquia(hijo);
         hijo = hijo->hermano;
     }
+
+    glPopMatrix();
 }
 
 void renderiza_dialogos_frame(Frame *frame) 
@@ -2667,6 +2696,19 @@ void visualiza_escena1()
         
         //Mr. Atomix
         Personaje *mr_atomix = crea_mr_atomix();
+
+        char *dialogos1[] = 
+        {
+            "Hola amigos! Soy Mr. Atomix.",
+            "Hoy vamos a ver que tan grande",
+            "y que tan pequeno es nuestro universo.",
+            "Vamos abajo!"
+        };
+        
+        Dialogo *dialogo_atomix = crea_dialogo(4, dialogos1, NULL);
+        
+        muestra_dialogo(mr_atomix, dialogo_atomix);
+
         NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(1, 1, mr_atomix);
         
         //Movimiento horizontal de Mr. Atomix (camina de izquierda a derecha)
