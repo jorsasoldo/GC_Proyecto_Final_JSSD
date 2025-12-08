@@ -176,6 +176,20 @@ typedef struct Boton
     bool hover;
 }Boton;
 
+typedef struct Camara 
+{
+    double pos_x;
+    double pos_y;
+    double zoom;
+    double objetivo_x;
+    double objetivo_y;
+    double objetivo_zoom;
+    double suavidad; //Velocidad con la que sigue la camara
+} Camara;
+
+Camara camara_global;
+bool camara_sigue_personaje = true;
+
 ma_engine motor_audio;
 bool audio_inicializado = false;
 Pelicula *pelicula_global = NULL;
@@ -1408,6 +1422,127 @@ void free_cola_recursos(ColaRecursos *cola)
     free(cola);
 }
 
+void inicializa_camara() 
+{
+    camara_global.pos_x = 600.0;
+    camara_global.pos_y = 300.0;
+    camara_global.zoom = 1.0;
+    camara_global.objetivo_x = 600.0;
+    camara_global.objetivo_y = 300.0;
+    camara_global.objetivo_zoom = 1.0;
+    camara_global.suavidad = 0.1;
+}
+
+NodoJerarquia *busca_mr_atomix_en_arbol(NodoJerarquia *nodo) 
+{
+    if(nodo == NULL || !nodo->activo) 
+        return NULL;
+    
+    //Verifica si el nodo contiene a Mr Atomix (id_jerarquia = 1)
+    if(nodo->id_jerarquia == 1 && nodo->tipo == 1) 
+    {
+        Personaje *p = (Personaje*)nodo->dato;
+        if(p != NULL && strcmp(p->nombre, "torso") == 0) 
+            return nodo;
+    }
+    
+    NodoJerarquia *hijo = nodo->hijo;
+
+    while(hijo != NULL) 
+    {
+        NodoJerarquia *resultado = busca_mr_atomix_en_arbol(hijo);
+        if(resultado != NULL) 
+            return resultado;
+        hijo = hijo->hermano;
+    }
+    
+    return NULL;
+}
+
+//Calcular la posicion objetivo de la camara basandose en mr atomix
+void actualiza_objetivo_camara(Frame *frame) 
+{
+    if(frame == NULL || frame->arbol_jerarquia == NULL || !camara_sigue_personaje) 
+        return;
+    
+    NodoJerarquia *nodo_atomix = busca_mr_atomix_en_arbol(frame->arbol_jerarquia);
+    
+    if(nodo_atomix != NULL) 
+    {
+        Personaje *atomix = (Personaje*)nodo_atomix->dato;
+        double escala_personaje = nodo_atomix->escala;
+        
+        //Posicion del personaje en las coordenadas del mundo
+        camara_global.objetivo_x = nodo_atomix->pos_x;
+  
+        double altura_personaje = 30.0 * escala_personaje;
+        
+        //Posiciona la camara en el centro vertical del personaje
+        camara_global.objetivo_y = nodo_atomix->pos_y + (altura_personaje * 0.4);
+        
+        //Ajusta zoom en base en la escala del personaje
+        //si el personaje es grande hace zoom out
+        //si es mas pequeño hace zoom in
+        if(escala_personaje > 35.0) 
+        {
+            //Personaje muy grande se aleja
+            camara_global.objetivo_zoom = 0.7 / (escala_personaje / 28.0);
+        } 
+        else if(escala_personaje < 20.0) 
+        {
+            //Personaje muy pequeño se acerca
+            camara_global.objetivo_zoom = 1.5 * (28.0 / escala_personaje);
+        } 
+        else 
+        {
+            //Tamaño normal
+            camara_global.objetivo_zoom = 1.0;
+        }
+        
+        //Limita el zoom para evitar valores extremos
+        if(camara_global.objetivo_zoom < 0.3) 
+            camara_global.objetivo_zoom = 0.3;
+
+        if(camara_global.objetivo_zoom > 2.5) 
+            camara_global.objetivo_zoom = 2.5;
+    }
+}
+
+void actualiza_camara() 
+{
+    if(!camara_sigue_personaje) 
+        return;
+    
+    //Hace mas o menos una interpolacion lineal suave
+    camara_global.pos_x += (camara_global.objetivo_x - camara_global.pos_x) * camara_global.suavidad;
+    camara_global.pos_y += (camara_global.objetivo_y - camara_global.pos_y) * camara_global.suavidad;
+    camara_global.zoom += (camara_global.objetivo_zoom - camara_global.zoom) * camara_global.suavidad;
+}
+
+void aplica_camara() 
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    double ancho_ventana = 1200.0;
+    double alto_ventana = 1000.0;
+    
+    //Calcular los limites de la vista con zoom
+    double mitad_ancho = (ancho_ventana / 2.0) / camara_global.zoom;
+    double mitad_alto = (alto_ventana / 2.0) / camara_global.zoom;
+    
+    //Centra la camara en la posicion del personaje
+    double izquierda = camara_global.pos_x - mitad_ancho;
+    double derecha = camara_global.pos_x + mitad_ancho;
+    double abajo = camara_global.pos_y - mitad_alto;
+    double arriba = camara_global.pos_y + mitad_alto;
+    
+    gluOrtho2D(izquierda, derecha, abajo, arriba);
+    
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
 void pausa()
 {
     en_pausa = !en_pausa;
@@ -1707,12 +1842,7 @@ void display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(0, 1200, 0, 1000);
-    
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    aplica_camara();
     
     if(frame_actual != NULL) 
     {
@@ -1720,9 +1850,19 @@ void display()
         renderiza_dialogos_frame(frame_actual);
     }
     
-    //Muestra el simbolo de de pausa en pantalla
+    //Simbolo de pausa
     if(en_pausa) 
     {
+        //Guarda la matriz actual
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        gluOrtho2D(0, 1200, 0, 1000);
+        
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+        
         glDisable(GL_TEXTURE_2D);
         
         //Fondo semi-transparente oscuro
@@ -1733,36 +1873,45 @@ void display()
         glVertex2f(0, 0);
         glVertex2f(1200, 0);
         glVertex2f(1200, 1000);
-        glVertex2f(0, 600);
+        glVertex2f(0, 1000);
         glEnd();
         
-        //Simbolo de pausa
+        //Simbolo de pausa central
         glColor3f(1.0, 1.0, 1.0);
+        
+        float centro_x = 600.0;
+        float centro_y = 500.0;
+        float ancho_barra = 20.0;
+        float alto_barra = 100.0;
+        float separacion = 30.0;
         
         //Barra izquierda
         glBegin(GL_POLYGON);
-        glVertex2f(360, 250);
-        glVertex2f(380, 250);
-        glVertex2f(380, 350);
-        glVertex2f(360, 350);
+        glVertex2f(centro_x - separacion - ancho_barra, centro_y - alto_barra/2);
+        glVertex2f(centro_x - separacion, centro_y - alto_barra/2);
+        glVertex2f(centro_x - separacion, centro_y + alto_barra/2);
+        glVertex2f(centro_x - separacion - ancho_barra, centro_y + alto_barra/2);
         glEnd();
         
         //Barra derecha
         glBegin(GL_POLYGON);
-        glVertex2f(420, 250);
-        glVertex2f(440, 250);
-        glVertex2f(440, 350);
-        glVertex2f(420, 350);
+        glVertex2f(centro_x + separacion, centro_y - alto_barra/2);
+        glVertex2f(centro_x + separacion + ancho_barra, centro_y - alto_barra/2);
+        glVertex2f(centro_x + separacion + ancho_barra, centro_y + alto_barra/2);
+        glVertex2f(centro_x + separacion, centro_y + alto_barra/2);
         glEnd();
         
-        //Pausa
+        //Texto de pausado
         glColor3f(1.0, 1.0, 1.0);
-        glRasterPos2f(360, 220);
-
+        glRasterPos2f(centro_x - 35, centro_y - alto_barra/2 - 30);
         char *texto_pausa = "PAUSA";
-
         for(int i = 0; texto_pausa[i] != '\0'; i++) 
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, texto_pausa[i]);
+
+        glPopMatrix();
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
     }
     
     glutSwapBuffers();
@@ -1791,29 +1940,25 @@ void actualiza(int valor)
     {
         tiempo_acumulado += tiempo;
         
-        //Actualizr dialogos
+        actualiza_objetivo_camara(frame_actual);
+        
+        actualiza_camara();
+        
         actualiza_dialogos_frame(frame_actual, tiempo);
         
-        //Cambia al siguiente frame cuando se cumple la duracion
         if(tiempo_acumulado >= frame_actual->tiempo_duracion) 
         {
             tiempo_acumulado = 0.0;
-            
-            //Guarda el frame actual en pila de frames
             push_pila_frame(pila_deshacer, frame_actual, escena_actual);
-            
             frame_actual = frame_actual->sig;
             
-            //Si termino la escena pasa a la siguiente
             if(frame_actual == NULL) 
             {
                 escena_actual = escena_actual->sig;
-
                 if(escena_actual != NULL) 
                     frame_actual = escena_actual->primer_frame;
-                
                 else 
-                    printf("FIN DE LA PELICULA");
+                    printf("FIN DE LA PELICULA\n");
             }
         }
     }
@@ -1846,6 +1991,12 @@ void keyboard(unsigned char key, int x, int y)
         case 'x':
         case 'X':
             reinicia_pelicula();
+            break;
+
+        case 'c':
+        case 'C':
+            camara_sigue_personaje = !camara_sigue_personaje;
+            printf("Seguimiento de camara: %s\n", camara_sigue_personaje ? "ACTIVADO" : "DESACTIVADO");
             break;
 
         case 27:
@@ -2258,16 +2409,16 @@ Personaje *crea_mr_atomix()
 Personaje *crea_piso() 
 {
     //Piso es un rectangulo que cubre toda la pantalla
-    Punto *rot_piso = crea_punto(1000, 600.0, 100.0, 0, 0, 0);
+    Punto *rot_piso = crea_punto(800, 1500.0, 100.0, 0, 0, 0);
     Personaje *piso = crea_personaje(1000, "piso", rot_piso);
     free(rot_piso);
 
     Punto *pts_piso[] = 
     {
-        crea_punto(1001, 0.0, 0.0, 0, 0, 0),
-        crea_punto(1002, 1200.0, 0.0, 0, 0, 0),
-        crea_punto(1003, 1200.0, 200.0, 0, 0, 0),
-        crea_punto(1004, 0.0, 200.0, 0, 0, 0)
+        crea_punto(801, 0.0, 0.0, 0, 0, 0),
+        crea_punto(802, 2000.0, 0.0, 0, 0, 0),
+        crea_punto(803, 2000.0, 200.0, 0, 0, 0),
+        crea_punto(804, 0.0, 200.0, 0, 0, 0)
     };
     
     piso->num_puntos = 4;
@@ -2480,14 +2631,14 @@ void visualiza_escena1()
         //Piso (Pasto)
         Personaje *piso = crea_piso();
         NodoJerarquia *nodo_piso = crea_nodo_jerarquia(100, 1, piso);
-        nodo_piso->pos_x = 0.0;
+        nodo_piso->pos_x = -400.0;
         nodo_piso->pos_y = 0.0;
         nodo_piso->escala = 1.0;
         
         //Pino a la derecha
         Personaje *pino = crea_pino();
         NodoJerarquia *nodo_pino = crea_nodo_jerarquia(16, 1, pino);
-        nodo_pino->pos_x = 690.0;
+        nodo_pino->pos_x = 800.0;
         nodo_pino->pos_y = 145.0;
         nodo_pino->escala = 40.0;
         agrega_hijo_jerarquia(nodo_piso, nodo_pino);
@@ -2495,7 +2646,7 @@ void visualiza_escena1()
         //Pino a la izquierda
         Personaje *pino2 = clona_personaje(pino);
         NodoJerarquia *nodo_pino2 = crea_nodo_jerarquia(17, 1, pino2);
-        nodo_pino2->pos_x = -100.0;
+        nodo_pino2->pos_x = -300.0;
         nodo_pino2->pos_y = 145.0;
         nodo_pino2->escala = 40.0;
         agrega_hijo_jerarquia(nodo_piso, nodo_pino2);
@@ -2637,6 +2788,8 @@ int main(int argc, char** argv)
     en_pausa = false;
     
     inicializa_botones();
+
+    inicializa_camara();
     
     //Timer global
     glutTimerFunc(33, actualiza, 0);
