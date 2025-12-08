@@ -206,6 +206,8 @@ int ventana_controles;
 Boton botones[4];
 int num_botones = 4;
 
+ColaRecursos *cola_recursos_global = NULL;
+
 Punto *crea_punto(int id, double x, double y, double z, double u, double v) 
 {
     Punto *p = (Punto*)malloc(sizeof(Punto));
@@ -230,6 +232,18 @@ void free_punto(Punto *p)
 
 Textura *carga_textura(char *ruta) 
 {
+    //Mantiene la cache para evitar cargar la misma textura multiples veces
+    static Textura *texturas_cargadas[100];
+    static int num_texturas = 0;
+    
+    //Verifica si la textura ya esta cargada
+    for(int i = 0; i < num_texturas; i++) 
+    {
+        if(strcmp(texturas_cargadas[i]->nombre, ruta) == 0)
+            return texturas_cargadas[i];
+    }
+    
+    //Carga nueva textura
     Textura *tex = (Textura*)malloc(sizeof(Textura));
 
     if(tex == NULL)
@@ -247,7 +261,7 @@ Textura *carga_textura(char *ruta)
     
     if(tex->id_textura == 0) 
     {
-        printf("Error: %s\n", SOIL_last_result());
+        printf("Error cargando textura %s: %s\n", ruta, SOIL_last_result());
         free(tex);
         return NULL;
     }
@@ -263,11 +277,29 @@ Textura *carga_textura(char *ruta)
     
     glBindTexture(GL_TEXTURE_2D, 0);
     
+    printf("  -> Textura cargada exitosamente: %s (ID: %d, %dx%d)\n", ruta, tex->id_textura, tex->ancho, tex->alto);
+    
+    //Almacena en cache para reutilizar y no tener que buscarla varias veces
+    if(num_texturas < 100)
+        texturas_cargadas[num_texturas++] = tex;
+    
     return tex;
 }
 
 Textura *carga_textura_transparente(char *ruta) 
 {
+    //Mantiene la cache para evitar cargar la misma textura multiples veces
+    static Textura *texturas_cargadas[100];
+    static int num_texturas = 0;
+    
+    //Verifica si la textura ya esta cargada
+    for(int i = 0; i < num_texturas; i++) 
+    {
+        if(strcmp(texturas_cargadas[i]->nombre, ruta) == 0)
+            return texturas_cargadas[i];
+    }
+    
+    //Carga nueva textura
     Textura *tex = (Textura*)malloc(sizeof(Textura));
     strcpy(tex->nombre, ruta);
     
@@ -279,9 +311,9 @@ Textura *carga_textura_transparente(char *ruta)
         SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y
     );
     
-    if (tex->id_textura == 0) 
+    if(tex->id_textura == 0) 
     {
-        printf("Error al cargar textura transparente: %s\n", ruta);
+        printf("Error cargando textura transparente %s: %s\n", ruta, SOIL_last_result());
         free(tex);
         return NULL;
     }
@@ -296,6 +328,13 @@ Textura *carga_textura_transparente(char *ruta)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
     glBindTexture(GL_TEXTURE_2D, 0);
+    
+    printf("  -> Textura transparente cargada: %s (ID: %d, %dx%d)\n", 
+           ruta, tex->id_textura, tex->ancho, tex->alto);
+    
+    //Almacena en cache para reutilizar y no tener que buscarla varias veces
+    if(num_texturas < 100)
+        texturas_cargadas[num_texturas++] = tex;
     
     return tex;
 }
@@ -1414,36 +1453,73 @@ NodoRecurso *desencola_recurso(ColaRecursos *cola)
 
 void cargar_recursos(ColaRecursos *cola) 
 {
-    puts("Recursos Cargados");
+    puts("Cargando recursos");
     
     NodoRecurso *actual = cola->frente;
+    int recursos_cargados = 0;
+    int errores = 0;
 
     while(actual != NULL) 
     {
-        if(actual->tipo == 0) 
+        printf("Procesando recurso: %s (tipo: %d)\n", actual->ruta, actual->tipo);
+        
+        if(actual->tipo == 0)
         {
-            if (strstr(actual->ruta, ".png") != NULL) 
+            if(strstr(actual->ruta, ".png") != NULL) 
             {
                 actual->dato_cargado = carga_textura_transparente(actual->ruta);
-            } 
-            
+
+                if(actual->dato_cargado != NULL) 
+                {
+                    printf("Textura transparente cargada: %s\n", actual->ruta);
+                    recursos_cargados++;
+                }
+
+                else 
+                {
+                    printf("error al cargar textura transparente: %s\n", actual->ruta);
+                    errores++;
+                }
+            }
+
             else 
             {
                 actual->dato_cargado = carga_textura(actual->ruta);
-            }
 
+                if(actual->dato_cargado != NULL) 
+                {
+                    printf("Textura cargada: %s\n", actual->ruta);
+                    recursos_cargados++;
+                }
+                else 
+                {
+                    printf("error al cargar textura: %s\n", actual->ruta);
+                    errores++;
+                }
+            }
         }
-        
-        else if (actual->tipo == 2)
+
+        else if(actual->tipo == 2)
+        {
             actual->dato_cargado = carga_audio(actual->ruta);
-        
-        if(actual->dato_cargado == NULL) 
-            printf("No se pudo cargar %s\n", actual->ruta);
+            if(actual->dato_cargado != NULL) 
+            {
+                printf("Audio cargado: %s\n", actual->ruta);
+                recursos_cargados++;
+            }
+            else 
+            {
+                printf("error al cargar audio: %s\n", actual->ruta);
+                errores++;
+            }
+        }
         
         actual = actual->sig;
     }
     
+    printf("Recursos cargados: %d correctos, %d errores", recursos_cargados, errores);
 }
+
 
 NodoRecurso *busca_recurso(ColaRecursos *cola, char *ruta) 
 {
@@ -1459,6 +1535,20 @@ NodoRecurso *busca_recurso(ColaRecursos *cola, char *ruta)
     
     return NULL;
 }
+
+Textura *busca_textura_en_cola(ColaRecursos *cola, char *ruta) 
+{
+    NodoRecurso *nodo = busca_recurso(cola, ruta);
+    
+    if(nodo == NULL || nodo->dato_cargado == NULL) 
+    {
+        printf("Error: Textura no encontrada en cola: %s\n", ruta);
+        return NULL;
+    }
+    
+    return (Textura*)nodo->dato_cargado;
+}
+
 
 void free_cola_recursos(ColaRecursos *cola) 
 {
@@ -2099,9 +2189,25 @@ void convierte_absolutas_a_relativas_personaje(Personaje *parte, double padre_x,
     }
 }
 
+void encola_todas_las_texturas(ColaRecursos *cola) 
+{
+    //Mr Atomix
+    encola_recurso(cola, "Figuras/Texturas/casco.png", 0);
+    encola_recurso(cola, "Figuras/Texturas/traje.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/guante.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/pantalon.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/zapato.jpg", 0);
+    
+    //Escena 1
+    encola_recurso(cola, "Figuras/Texturas/pasto.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/cielo.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/balon.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/tronco.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/hoja.jpg", 0);
+}
+
 Personaje *crea_mr_atomix() 
 {
-
     //Torso (su raiz)
     Punto *rot_torso = crea_punto(11, 0.0, 11.288829237070836, 0, 0, 0);
     Personaje *torso = crea_personaje(1, "torso", rot_torso);
@@ -2109,16 +2215,16 @@ Personaje *crea_mr_atomix()
 
     Punto *pts_torso[] = 
     {
-        crea_punto(1, -0.43780011382007067, 14.055403590225414, 0, 0, 0),
-        crea_punto(2, 0.5507693591938506, 13.982176221854012, 0, 0, 0),
-        crea_punto(3, 1.9222321263005, 12.927863898716467, 0, 0, 0),
-        crea_punto(4, 1.9229840215597918, 12.234625900000523, 0, 0, 0),
-        crea_punto(5, 1.9222321263005, 8.927863898716467, 0, 0, 0),
-        crea_punto(6, 0.9584636256010058, 7.679541370359747, 0, 0, 0),
-        crea_punto(7, -0.9729509212840275, 7.748520461319927, 0, 0, 0),
-        crea_punto(8, -2.0777678736994996, 8.927863898716467, 0, 0, 0),
-        crea_punto(9, -2.0777678736994996, 12.240394234879222, 0, 0, 0),
-        crea_punto(10, -2.0777678736994996, 12.927863898716467, 0, 0, 0)
+        crea_punto(1, -0.43780011382007067, 14.055403590225414, 0, 0.0, 0.0),
+        crea_punto(2, 0.5507693591938506, 13.982176221854012, 0, 1.0, 0.0),
+        crea_punto(3, 1.9222321263005, 12.927863898716467, 0, 1.0, 1.0),
+        crea_punto(4, 1.9229840215597918, 12.234625900000523, 0, 0.0, 1.0),
+        crea_punto(5, 1.9222321263005, 8.927863898716467, 0, 0.0, 0.5),
+        crea_punto(6, 0.9584636256010058, 7.679541370359747, 0, 0.5, 0.5),
+        crea_punto(7, -0.9729509212840275, 7.748520461319927, 0, 0.5, 0.0),
+        crea_punto(8, -2.0777678736994996, 8.927863898716467, 0, 0.0, 0.0),
+        crea_punto(9, -2.0777678736994996, 12.240394234879222, 0, 0.0, 1.0),
+        crea_punto(10, -2.0777678736994996, 12.927863898716467, 0, 1.0, 1.0)
     };
 
     torso->num_puntos = 10;
@@ -2129,6 +2235,10 @@ Personaje *crea_mr_atomix()
         torso->puntos_figura[i] = *pts_torso[i];
         free(pts_torso[i]);
     }
+    
+    //Asigna textura al torso
+    if(cola_recursos_global != NULL) 
+        torso->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/traje.jpg");
 
     //Cuello (el cual es un hijo de torso)
     Punto *rot_cuello = crea_punto(14, -0.0639464435353998, 14.524080080243076, 0, 0, 0);
@@ -2137,10 +2247,10 @@ Personaje *crea_mr_atomix()
 
     Punto *pts_cuello[] = 
     {
-        crea_punto(12, -0.40118642963437146, 15.080586747425041, 0, 0, 0),
-        crea_punto(13, 0.5141556750081478, 15.080586747425041, 0, 0, 0),
-        crea_punto(2, 0.5507693591938506, 13.982176221854012, 0, 0, 0),
-        crea_punto(1, -0.43780011382007067, 14.055403590225414, 0, 0, 0)
+        crea_punto(12, -0.40118642963437146, 15.080586747425041, 0, 0.0, 0.0),
+        crea_punto(13, 0.5141556750081478, 15.080586747425041, 0, 1.0, 0.0),
+        crea_punto(2, 0.5507693591938506, 13.982176221854012, 0, 1.0, 1.0),
+        crea_punto(1, -0.43780011382007067, 14.055403590225414, 0, 0.0, 1.0)
     };
 
     cuello->num_puntos = 4;
@@ -2151,6 +2261,10 @@ Personaje *crea_mr_atomix()
         cuello->puntos_figura[i] = *pts_cuello[i];
         free(pts_cuello[i]);
     }
+    
+    //Asigna textura al cuello
+    if(cola_recursos_global != NULL) 
+        cuello->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/traje.jpg");
 
     //Cabeza (el cual es un hijo de cuello)
     double cab_x = -0.07776787369949978;
@@ -2172,8 +2286,13 @@ Personaje *crea_mr_atomix()
         cabeza->puntos_figura[i].x = cab_x + radio_cabeza * cos(angulo);
         cabeza->puntos_figura[i].y = cab_y + radio_cabeza * sin(angulo);
         cabeza->puntos_figura[i].z = 0;
-        cabeza->puntos_figura[i].u = 0; cabeza->puntos_figura[i].v = 0;
+        cabeza->puntos_figura[i].u = 0.5 + 0.5 * cos(angulo);
+        cabeza->puntos_figura[i].v = 0.5 + 0.5 * sin(angulo);
     }
+    
+    //Asigna textura a la cabeza
+    if(cola_recursos_global != NULL) 
+        cabeza->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/casco.png");
 
     //Brazo izquierdo (el cual es un hijo de torso)
     Punto *rot_brazo_izq = crea_punto(18, -2.0777678736994996, 12.592281658715061, 0, 0, 0);
@@ -2182,10 +2301,10 @@ Personaje *crea_mr_atomix()
 
     Punto *pts_brazo_izq[] = 
     {
-        crea_punto(10, -2.0777678736994996, 12.927863898716467, 0, 0, 0),
-        crea_punto(9, -2.0777678736994996, 12.240394234879222, 0, 0, 0),
-        crea_punto(16, -4.533740818548646, 12.26854522878609, 0, 0, 0),
-        crea_punto(17, -4.5620494136876015, 12.970116970194763, 0, 0, 0)
+        crea_punto(10, -2.0777678736994996, 12.927863898716467, 0, 1.0, 0.0),
+        crea_punto(9, -2.0777678736994996, 12.240394234879222, 0, 1.0, 1.0),
+        crea_punto(16, -4.533740818548646, 12.26854522878609, 0, 0.0, 1.0),
+        crea_punto(17, -4.5620494136876015, 12.970116970194763, 0, 0.0, 0.0)
     };
 
     brazo_izq->num_puntos = 4;
@@ -2196,6 +2315,10 @@ Personaje *crea_mr_atomix()
         brazo_izq->puntos_figura[i] = *pts_brazo_izq[i];
         free(pts_brazo_izq[i]);
     }
+    
+    //Asigna textura al brazo izquierdo
+    if(cola_recursos_global != NULL) 
+        brazo_izq->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/traje.jpg");
 
     //Codo izquierdo (el cual es un hijo de brazo izquierdo)
     Punto *rot_codo_izq = crea_punto(21, -4.547483304863437, 12.620530358414843, 0, 0, 0);
@@ -2204,10 +2327,10 @@ Personaje *crea_mr_atomix()
 
     Punto *pts_codo_izq[] = 
     {
-        crea_punto(17, -4.5620494136876015, 12.970116970194763, 0, 0, 0),
-        crea_punto(16, -4.533740818548646, 12.26854522878609, 0, 0, 0),
-        crea_punto(19, -6.091490840224733, 12.241811528986597, 0, 0, 0),
-        crea_punto(20, -6.077767873699498, 12.927863898716467, 0, 0, 0)
+        crea_punto(17, -4.5620494136876015, 12.970116970194763, 0, 1.0, 0.0),
+        crea_punto(16, -4.533740818548646, 12.26854522878609, 0, 1.0, 1.0),
+        crea_punto(19, -6.091490840224733, 12.241811528986597, 0, 0.0, 1.0),
+        crea_punto(20, -6.077767873699498, 12.927863898716467, 0, 0.0, 0.0)
     };
 
     codo_izq->num_puntos = 4;
@@ -2218,8 +2341,12 @@ Personaje *crea_mr_atomix()
         codo_izq->puntos_figura[i] = *pts_codo_izq[i];
         free(pts_codo_izq[i]);
     }
+    
+    //Asigna textura al codo izquierdo
+    if(cola_recursos_global != NULL) 
+        codo_izq->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/traje.jpg");
 
-    //Mano izquierda (la cual es hija de codo izquiedo)
+    //Mano izquierda (la cual es hija de codo izquierdo)
     double mano_izq_x = -6.53188255196353;
     double mano_izq_y = 12.643092738069981;
     Punto *rot_mano_izq = crea_punto(22, mano_izq_x, mano_izq_y, 0, 0, 0);
@@ -2237,8 +2364,13 @@ Personaje *crea_mr_atomix()
         mano_izq->puntos_figura[i].x = mano_izq_x + radio_mano * cos(angulo);
         mano_izq->puntos_figura[i].y = mano_izq_y + radio_mano * sin(angulo);
         mano_izq->puntos_figura[i].z = 0;
-        mano_izq->puntos_figura[i].u = 0; mano_izq->puntos_figura[i].v = 0;
+        mano_izq->puntos_figura[i].u = 0.5 + 0.5 * cos(angulo);
+        mano_izq->puntos_figura[i].v = 0.5 + 0.5 * sin(angulo);
     }
+    
+    //Asigna textura a la mano izquierda
+    if(cola_recursos_global != NULL) 
+        mano_izq->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/guante.jpg");
 
     //Brazo derecho (el cual es hijo de torso)
     Punto *rot_brazo_der = crea_punto(25, 1.9222321263005, 12.591594581118464, 0, 0, 0);
@@ -2247,10 +2379,10 @@ Personaje *crea_mr_atomix()
 
     Punto *pts_brazo_der[] = 
     {
-        crea_punto(3, 1.9222321263005, 12.927863898716467, 0, 0, 0),
-        crea_punto(4, 1.9229840215597918, 12.234625900000523, 0, 0, 0),
-        crea_punto(23, 4.523755841133346, 12.19382947930133, 0, 0, 0),
-        crea_punto(24, 4.482959420434158, 12.917965946712009, 0, 0, 0)
+        crea_punto(3, 1.9222321263005, 12.927863898716467, 0, 1.0, 0.0),
+        crea_punto(4, 1.9229840215597918, 12.234625900000523, 0, 1.0, 1.0),
+        crea_punto(23, 4.523755841133346, 12.19382947930133, 0, 0.0, 1.0),
+        crea_punto(24, 4.482959420434158, 12.917965946712009, 0, 0.0, 0.0)
     };
 
     brazo_der->num_puntos = 4;
@@ -2261,6 +2393,10 @@ Personaje *crea_mr_atomix()
         brazo_der->puntos_figura[i] = *pts_brazo_der[i];
         free(pts_brazo_der[i]);
     }
+    
+    //Asigna textura al brazo derecho
+    if(cola_recursos_global != NULL) 
+        brazo_der->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/traje.jpg");
 
     //Codo derecho (el cual es hijo de brazo derecho)
     Punto *rot_codo_der = crea_punto(28, 4.503357630783748, 12.540599055244472, 0, 0, 0);
@@ -2269,10 +2405,10 @@ Personaje *crea_mr_atomix()
 
     Punto *pts_codo_der[] = 
     {
-        crea_punto(24, 4.482959420434158, 12.917965946712009, 0, 0, 0),
-        crea_punto(23, 4.523755841133346, 12.19382947930133, 0, 0, 0),
-        crea_punto(26, 6.41879752117055, 12.22246360524533, 0, 0, 0),
-        crea_punto(27, 6.395461967885172, 12.922530203806797, 0, 0, 0)
+        crea_punto(24, 4.482959420434158, 12.917965946712009, 0, 1.0, 0.0),
+        crea_punto(23, 4.523755841133346, 12.19382947930133, 0, 1.0, 1.0),
+        crea_punto(26, 6.41879752117055, 12.22246360524533, 0, 0.0, 1.0),
+        crea_punto(27, 6.395461967885172, 12.922530203806797, 0, 0.0, 0.0)
     };
 
     codo_der->num_puntos = 4;
@@ -2283,6 +2419,10 @@ Personaje *crea_mr_atomix()
         codo_der->puntos_figura[i] = *pts_codo_der[i];
         free(pts_codo_der[i]);
     }
+    
+    //Asigna textura al codo derecho
+    if(cola_recursos_global != NULL) 
+        codo_der->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/traje.jpg");
 
     //Mano derecha (la cual es hija de codo derecho)
     double mano_der_x = 6.792166373736666;
@@ -2301,8 +2441,13 @@ Personaje *crea_mr_atomix()
         mano_der->puntos_figura[i].x = mano_der_x + radio_mano * cos(angulo);
         mano_der->puntos_figura[i].y = mano_der_y + radio_mano * sin(angulo);
         mano_der->puntos_figura[i].z = 0;
-        mano_der->puntos_figura[i].u = 0; mano_der->puntos_figura[i].v = 0;
+        mano_der->puntos_figura[i].u = 0.5 + 0.5 * cos(angulo);
+        mano_der->puntos_figura[i].v = 0.5 + 0.5 * sin(angulo);
     }
+    
+    //Asigna textura a la mano derecha
+    if(cola_recursos_global != NULL) 
+        mano_der->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/guante.jpg");
 
     //Pierna izquierda (la cual es hija de torso)
     Punto *rot_pierna_izq = crea_punto(33, -1.5321251454883669, 8.345414318021627, 0, 0, 0);
@@ -2311,11 +2456,11 @@ Personaje *crea_mr_atomix()
 
     Punto *pts_pierna_izq[] = 
     {
-        crea_punto(8, -2.0777678736994996, 8.927863898716467, 0, 0, 0),
-        crea_punto(30, -2.0777678736994996, 5.0, 0, 0, 0),
-        crea_punto(31, -0.7551282629462819, 5.043136692795641, 0, 0, 0),
-        crea_punto(32, -0.27845504265492366, 7.727033019779604, 0, 0, 0),
-        crea_punto(7, -0.9729509212840275, 7.748520461319927, 0, 0, 0)
+        crea_punto(8, -2.0777678736994996, 8.927863898716467, 0, 0.0, 0.0),
+        crea_punto(30, -2.0777678736994996, 5.0, 0, 0.0, 1.0),
+        crea_punto(31, -0.7551282629462819, 5.043136692795641, 0, 1.0, 1.0),
+        crea_punto(32, -0.27845504265492366, 7.727033019779604, 0, 1.0, 0.5),
+        crea_punto(7, -0.9729509212840275, 7.748520461319927, 0, 0.5, 0.5)
     };
 
     pierna_izq->num_puntos = 5;
@@ -2326,18 +2471,22 @@ Personaje *crea_mr_atomix()
         pierna_izq->puntos_figura[i] = *pts_pierna_izq[i];
         free(pts_pierna_izq[i]);
     }
+    
+    //Asigna textura a la pierna izquierda
+    if(cola_recursos_global != NULL) 
+        pierna_izq->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/pantalon.jpg");
 
-    //Rodilla izquierda (la cuak es hija de pierna izquierda)
+    //Rodilla izquierda (la cual es hija de pierna izquierda)
     Punto *rot_rodilla_izq = crea_punto(36, -1.4808743925708157, 5.012202476226791, 0, 0, 0);
     Personaje *rodilla_izq = crea_personaje(11, "rodilla_izquierda", rot_rodilla_izq);
     free(rot_rodilla_izq);
 
     Punto *pts_rodilla_izq[] = 
     {
-        crea_punto(30, -2.0777678736994996, 5.0, 0, 0, 0),
-        crea_punto(31, -0.7551282629462819, 5.043136692795641, 0, 0, 0),
-        crea_punto(34, -1.1187852996750036, 2.995575085366731, 0, 0, 0),
-        crea_punto(35, -2.0777678736994996, 2.927863898716467, 0, 0, 0)
+        crea_punto(30, -2.0777678736994996, 5.0, 0, 0.0, 0.0),
+        crea_punto(31, -0.7551282629462819, 5.043136692795641, 0, 1.0, 0.0),
+        crea_punto(34, -1.1187852996750036, 2.995575085366731, 0, 1.0, 1.0),
+        crea_punto(35, -2.0777678736994996, 2.927863898716467, 0, 0.0, 1.0)
     };
 
     rodilla_izq->num_puntos = 4;
@@ -2348,6 +2497,10 @@ Personaje *crea_mr_atomix()
         rodilla_izq->puntos_figura[i] = *pts_rodilla_izq[i];
         free(pts_rodilla_izq[i]);
     }
+    
+    //Asigna textura a la rodilla izquierda
+    if(cola_recursos_global != NULL) 
+        rodilla_izq->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/pantalon.jpg");
 
     //Pie izquierdo (el cual es hijo de rodilla izquierda)
     Punto *rot_pie_izq = crea_punto(39, -1.89092548863924, 2.4695700703988432, 0, 0, 0);
@@ -2356,10 +2509,10 @@ Personaje *crea_mr_atomix()
 
     Punto *pts_pie_izq[] = 
     {
-        crea_punto(34, -1.1187852996750036, 2.995575085366731, 0, 0, 0),
-        crea_punto(35, -2.0777678736994996, 2.927863898716467, 0, 0, 0),
-        crea_punto(37, -2.6884073677300786, 2.353724639400469, 0, 0, 0),
-        crea_punto(38, -1.631210196284186, 1.8985425239168174, 0, 0, 0)
+        crea_punto(34, -1.1187852996750036, 2.995575085366731, 0, 0.0, 0.0),
+        crea_punto(35, -2.0777678736994996, 2.927863898716467, 0, 1.0, 0.0),
+        crea_punto(37, -2.6884073677300786, 2.353724639400469, 0, 1.0, 1.0),
+        crea_punto(38, -1.631210196284186, 1.8985425239168174, 0, 0.0, 1.0)
     };
 
     pie_izq->num_puntos = 4;
@@ -2370,6 +2523,10 @@ Personaje *crea_mr_atomix()
         pie_izq->puntos_figura[i] = *pts_pie_izq[i];
         free(pts_pie_izq[i]);
     }
+    
+    //Asigna textura al pie izquierdo
+    if(cola_recursos_global != NULL) 
+        pie_izq->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/zapato.jpg");
 
     //Pierna derecha (la cual es hija de torso)
     Punto *rot_pierna_der = crea_punto(43, 1.3401846801530235, 8.17396611198548, 0, 0, 0);
@@ -2378,11 +2535,11 @@ Personaje *crea_mr_atomix()
 
     Punto *pts_pierna_der[] = 
     {
-        crea_punto(5, 1.9222321263005, 8.927863898716467, 0, 0, 0),
-        crea_punto(40, 2.101689927946859, 5.0046515582985185, 0, 0, 0),
-        crea_punto(41, 0.690626408623049, 4.996745553846009, 0, 0, 0),
-        crea_punto(42, 0.030053601124750435, 7.702592052454861, 0, 0, 0),
-        crea_punto(6, 0.9584636256010058, 7.679541370359747, 0, 0, 0)
+        crea_punto(5, 1.9222321263005, 8.927863898716467, 0, 0.0, 0.0),
+        crea_punto(40, 2.101689927946859, 5.0046515582985185, 0, 0.0, 1.0),
+        crea_punto(41, 0.690626408623049, 4.996745553846009, 0, 1.0, 1.0),
+        crea_punto(42, 0.030053601124750435, 7.702592052454861, 0, 1.0, 0.5),
+        crea_punto(6, 0.9584636256010058, 7.679541370359747, 0, 0.5, 0.5)
     };
 
     pierna_der->num_puntos = 5;
@@ -2393,19 +2550,22 @@ Personaje *crea_mr_atomix()
         pierna_der->puntos_figura[i] = *pts_pierna_der[i];
         free(pts_pierna_der[i]);
     }
+    
+    //Asigna textura a la pierna derecha
+    if(cola_recursos_global != NULL) 
+        pierna_der->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/pantalon.jpg");
 
     //Rodilla derecha (la cual es hija de pierna derecha)
     Punto *rot_rodilla_der = crea_punto(46, 1.5382199240784127, 4.995241272200672, 0, 0, 0);
     Personaje *rodilla_der = crea_personaje(14, "rodilla_derecha", rot_rodilla_der);
     free(rot_rodilla_der);
 
-
     Punto *pts_rodilla_der[] = 
     {
-        crea_punto(40, 2.101689927946859, 5.0046515582985185, 0, 0, 0),
-        crea_punto(41, 0.690626408623049, 4.996745553846009, 0, 0, 0),
-        crea_punto(44, 1.1852246849682402, 2.9660364958200223, 0, 0, 0),
-        crea_punto(45, 2.189536729556298, 3.0841908540068665, 0, 0, 0)
+        crea_punto(40, 2.101689927946859, 5.0046515582985185, 0, 0.0, 0.0),
+        crea_punto(41, 0.690626408623049, 4.996745553846009, 0, 1.0, 0.0),
+        crea_punto(44, 1.1852246849682402, 2.9660364958200223, 0, 1.0, 1.0),
+        crea_punto(45, 2.189536729556298, 3.0841908540068665, 0, 0.0, 1.0)
     };
 
     rodilla_der->num_puntos = 4;
@@ -2416,6 +2576,10 @@ Personaje *crea_mr_atomix()
         rodilla_der->puntos_figura[i] = *pts_rodilla_der[i];
         free(pts_rodilla_der[i]);
     }
+    
+    //Asigna textura a la rodilla derecha
+    if(cola_recursos_global != NULL) 
+        rodilla_der->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/pantalon.jpg");
 
     //Pie derecho (el cual es hijo de pierna derecha)
     Punto *rot_pie_der = crea_punto(49, 1.9237479839831515, 2.5337938747015727, 0, 0, 0);
@@ -2424,10 +2588,10 @@ Personaje *crea_mr_atomix()
 
     Punto *pts_pie_der[] = 
     {
-        crea_punto(44, 1.1852246849682402, 2.9660364958200223, 0, 0, 0),
-        crea_punto(45, 2.189536729556298, 3.0841908540068665, 0, 0, 0),
-        crea_punto(47, 2.9352942526001597, 2.544607462022646, 0, 0, 0),
-        crea_punto(48, 1.3935483775748987, 1.9572757001082564, 0, 0, 0)
+        crea_punto(44, 1.1852246849682402, 2.9660364958200223, 0, 0.0, 0.0),
+        crea_punto(45, 2.189536729556298, 3.0841908540068665, 0, 1.0, 0.0),
+        crea_punto(47, 2.9352942526001597, 2.544607462022646, 0, 1.0, 1.0),
+        crea_punto(48, 1.3935483775748987, 1.9572757001082564, 0, 0.0, 1.0)
     };
 
     pie_der->num_puntos = 4;
@@ -2437,6 +2601,12 @@ Personaje *crea_mr_atomix()
     {
         pie_der->puntos_figura[i] = *pts_pie_der[i];
         free(pts_pie_der[i]);
+    }
+    
+    //Asigna textura al pie derecho
+    if(cola_recursos_global != NULL) 
+    {
+        pie_der->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/zapato.jpg");
     }
 
     //Jerarquia
@@ -2480,10 +2650,10 @@ Personaje *crea_piso()
 
     Punto *pts_piso[] = 
     {
-        crea_punto(801, 0.0, 0.0, 0, 0, 0),
-        crea_punto(802, 2000.0, 0.0, 0, 0, 0),
-        crea_punto(803, 2000.0, 200.0, 0, 0, 0),
-        crea_punto(804, 0.0, 200.0, 0, 0, 0)
+        crea_punto(801, 0.0, 0.0, 0, 0.0, 0.0),
+        crea_punto(802, 2000.0, 0.0, 0, 10.0, 0.0),
+        crea_punto(803, 2000.0, 200.0, 0, 10.0, 2.0),
+        crea_punto(804, 0.0, 200.0, 0, 0.0, 2.0)
     };
     
     piso->num_puntos = 4;
@@ -2498,6 +2668,10 @@ Personaje *crea_piso()
     //Convierte coordenadas a relativas
     convierte_absolutas_a_relativas_personaje(piso, 0.0, 0.0);
     
+    // Asigna textura al piso
+    if(cola_recursos_global != NULL) 
+        piso->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/pasto.jpg");
+    
     return piso;
 }
 
@@ -2510,10 +2684,10 @@ Personaje *crea_pino()
 
     Punto *pts_tronco[] = 
     {
-        crea_punto(1, 7.0, 0.0, 0, 0, 0),
-        crea_punto(2, 9.0, 0.0, 0, 0, 0),
-        crea_punto(3, 9.0, 3.0, 0, 0, 0),
-        crea_punto(4, 7.0, 3.0, 0, 0, 0)
+        crea_punto(1, 7.0, 0.0, 0, 0.0, 0.0),
+        crea_punto(2, 9.0, 0.0, 0, 1.0, 0.0),
+        crea_punto(3, 9.0, 3.0, 0, 1.0, 1.0),
+        crea_punto(4, 7.0, 3.0, 0, 0.0, 1.0)
     };
 
     tronco->num_puntos = 4;
@@ -2524,6 +2698,10 @@ Personaje *crea_pino()
         tronco->puntos_figura[i] = *pts_tronco[i];
         free(pts_tronco[i]);
     }
+    
+    //Asigna textura al tronco
+    if(cola_recursos_global != NULL) 
+        tronco->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/tronco.jpg");
 
     //hoja1 (el cual es hijo de tronco)
     Punto *rot_hoja1 = crea_punto(10, 7.9978791971979, 3.7724478420487, 0, 0, 0);
@@ -2532,12 +2710,12 @@ Personaje *crea_pino()
 
     Punto *pts_hoja1[] = 
     {
-        crea_punto(3, 9.0, 3.0, 0, 0, 0),
-        crea_punto(4, 7.0, 3.0, 0, 0, 0),
-        crea_punto(6, 3.054227098302812, 2.991150583326896, 0, 0, 0),
-        crea_punto(7, 4.84, 4.439074557675965, 0, 0, 0),
-        crea_punto(8, 11.16260135465759, 4.439074557675965, 0, 0, 0),
-        crea_punto(9, 12.513997064050054, 2.9187543846094424, 0, 0, 0)
+        crea_punto(3, 9.0, 3.0, 0, 0.5, 0.0),
+        crea_punto(4, 7.0, 3.0, 0, 0.0, 0.0),
+        crea_punto(6, 3.054227098302812, 2.991150583326896, 0, 0.0, 1.0),
+        crea_punto(7, 4.84, 4.439074557675965, 0, 0.3, 1.2),
+        crea_punto(8, 11.16260135465759, 4.439074557675965, 0, 0.7, 1.2),
+        crea_punto(9, 12.513997064050054, 2.9187543846094424, 0, 1.0, 1.0)
     };
 
     hoja1->num_puntos = 6;
@@ -2548,6 +2726,10 @@ Personaje *crea_pino()
         hoja1->puntos_figura[i] = *pts_hoja1[i];
         free(pts_hoja1[i]);
     }
+    
+    //Asigna textura a la hoja1
+    if(cola_recursos_global != NULL) 
+        hoja1->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/hoja.jpg");
 
     //hoja2 (el cual es hijo de hoja1)
     Punto *rot_hoja2 = crea_punto(13, 7.9978791971979, 5.2403785484755, 0, 0, 0);
@@ -2556,10 +2738,10 @@ Personaje *crea_pino()
 
     Punto *pts_hoja2[] = 
     {
-        crea_punto(7, 4.84, 4.439074557675965, 0, 0, 0),
-        crea_punto(8, 11.16260135465759, 4.439074557675965, 0, 0, 0),
-        crea_punto(11, 13.237959051224585, 6.007658863220787, 0, 0, 0),
-        crea_punto(12, 2.8129064359113007, 5.983526796981636, 0, 0, 0)
+        crea_punto(7, 4.84, 4.439074557675965, 0, 0.0, 0.0),
+        crea_punto(8, 11.16260135465759, 4.439074557675965, 0, 1.0, 0.0),
+        crea_punto(11, 13.237959051224585, 6.007658863220787, 0, 1.2, 0.8),
+        crea_punto(12, 2.8129064359113007, 5.983526796981636, 0, -0.2, 0.8)
     };
 
     hoja2->num_puntos = 4;
@@ -2570,6 +2752,10 @@ Personaje *crea_pino()
         hoja2->puntos_figura[i] = *pts_hoja2[i];
         free(pts_hoja2[i]);
     }
+    
+    //Asigna textura a la hoja2
+    if(cola_recursos_global != NULL) 
+        hoja2->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/hoja.jpg");
 
     //hoja3 (el cual es hijo de hoja2)
     Punto *rot_hoja3 = crea_punto(18, 8.0, 7.0, 0, 0, 0);
@@ -2578,10 +2764,10 @@ Personaje *crea_pino()
 
     Punto *pts_hoja3[] = 
     {
-        crea_punto(14, 4.841708898957756, 6.0419402794746135, 0, 0, 0),
-        crea_punto(15, 11.306789987074035, 6.017358222105351, 0, 0, 0),
-        crea_punto(16, 12.85545960133763, 7.910176639538633, 0, 0, 0),
-        crea_punto(17, 2.776816079939629, 8.008504869015686, 0, 0, 0)
+        crea_punto(14, 4.841708898957756, 6.0419402794746135, 0, 0.0, 0.0),
+        crea_punto(15, 11.306789987074035, 6.017358222105351, 0, 1.0, 0.0),
+        crea_punto(16, 12.85545960133763, 7.910176639538633, 0, 1.2, 1.0),
+        crea_punto(17, 2.776816079939629, 8.008504869015686, 0, -0.2, 1.0)
     };
 
     hoja3->num_puntos = 4;
@@ -2592,6 +2778,10 @@ Personaje *crea_pino()
         hoja3->puntos_figura[i] = *pts_hoja3[i];
         free(pts_hoja3[i]);
     }
+    
+    //Asigna textura a la hoja3
+    if(cola_recursos_global != NULL) 
+        hoja3->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/hoja.jpg");
 
     //hoja4 (el cual es hijo de hoja3)
     Punto *rot_hoja4 = crea_punto(25, 8.0, 9.0, 0, 0, 0);
@@ -2600,12 +2790,12 @@ Personaje *crea_pino()
 
     Punto *pts_hoja4[] = 
     {
-        crea_punto(19, 6.0, 8.0, 0, 0, 0),
-        crea_punto(20, 10.0, 8.0, 0, 0, 0),
-        crea_punto(21, 12.00275211022515, 8.786610241381782, 0, 0, 0),
-        crea_punto(22, 10.0, 10.0, 0, 0, 0),
-        crea_punto(23, 6.0, 10.0, 0, 0, 0),
-        crea_punto(24, 4.001009222087615, 8.8121749151458, 0, 0, 0)
+        crea_punto(19, 6.0, 8.0, 0, 0.0, 0.0),
+        crea_punto(20, 10.0, 8.0, 0, 1.0, 0.0),
+        crea_punto(21, 12.00275211022515, 8.786610241381782, 0, 1.2, 0.3),
+        crea_punto(22, 10.0, 10.0, 0, 1.0, 1.0),
+        crea_punto(23, 6.0, 10.0, 0, 0.0, 1.0),
+        crea_punto(24, 4.001009222087615, 8.8121749151458, 0, -0.2, 0.3)
     };
 
     hoja4->num_puntos = 6;
@@ -2616,17 +2806,21 @@ Personaje *crea_pino()
         hoja4->puntos_figura[i] = *pts_hoja4[i];
         free(pts_hoja4[i]);
     }
+    
+    //Asigna textura a la hoja4
+    if(cola_recursos_global != NULL) 
+        hoja4->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/hoja.jpg");
 
-    //copa (el cual ees hijo de hoja4)
+    //copa (el cual es hijo de hoja4)
     Punto *rot_copa = crea_punto(27, 8.0, 11.0, 0, 0, 0);
     Personaje *copa = crea_personaje(22, "copa_pino", rot_copa);
     free(rot_copa);
 
     Punto *pts_copa[] = 
     {
-        crea_punto(22, 10.0, 10.0, 0, 0, 0),
-        crea_punto(23, 6.0, 10.0, 0, 0, 0),
-        crea_punto(26, 8.0, 12.0, 0, 0, 0)
+        crea_punto(22, 10.0, 10.0, 0, 1.0, 0.0),
+        crea_punto(23, 6.0, 10.0, 0, 0.0, 0.0),
+        crea_punto(26, 8.0, 12.0, 0, 0.5, 1.0)
     };
 
     copa->num_puntos = 3;
@@ -2637,6 +2831,10 @@ Personaje *crea_pino()
         copa->puntos_figura[i] = *pts_copa[i];
         free(pts_copa[i]);
     }
+    
+    //Asigna textura a la copa
+    if(cola_recursos_global != NULL) 
+        copa->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/hoja.jpg");
 
     //Jerarquia
     agrega_hijo_personaje(tronco, hoja1);
@@ -2672,12 +2870,53 @@ Personaje *crea_balon()
         balon->puntos_figura[i].x = centro_x + radio_balon * cos(angulo);
         balon->puntos_figura[i].y = centro_y + radio_balon * sin(angulo);
         balon->puntos_figura[i].z = 0;
-        balon->puntos_figura[i].u = 0; 
-        balon->puntos_figura[i].v = 0;
+        balon->puntos_figura[i].u = 0.5 + 0.5 * cos(angulo);
+        balon->puntos_figura[i].v = 0.5 + 0.5 * sin(angulo);
     }
     
     convierte_absolutas_a_relativas_personaje(balon, 0.0, 0.0);
+    
+    //Asigna textura al balon
+    if(cola_recursos_global != NULL) 
+        balon->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/balon.jpg");
+    
     return balon;
+}
+
+Personaje *crea_fondo() 
+{
+    //Fondo es un rectangulo grande que cubre toda las escena
+    Punto *rot_fondo = crea_punto(900, 0.0, 0.0, 0, 0, 0);
+    Personaje *fondo = crea_personaje(3000, "fondo", rot_fondo);
+    free(rot_fondo);
+
+    Punto *pts_fondo[] = 
+    {
+        crea_punto(901, -1000.0, -500.0, 0, 0.0, 0.0),
+        crea_punto(902, 3000.0, -500.0, 0, 4.0, 0.0),
+        crea_punto(903, 3000.0, 1500.0, 0, 4.0, 2.0),
+        crea_punto(904, -1000.0, 1500.0, 0, 0.0, 2.0)
+    };
+    
+    fondo->num_puntos = 4;
+    fondo->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+    
+    for(int i = 0; i < 4; i++) 
+    {
+        fondo->puntos_figura[i] = *pts_fondo[i];
+        free(pts_fondo[i]);
+    }
+    
+    //Convierte coordenadas a relativas
+    convierte_absolutas_a_relativas_personaje(fondo, 0.0, 0.0);
+    
+    //Asigna textura al fondo
+    if(cola_recursos_global != NULL) 
+    {
+        fondo->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/cielo.jpg");
+    }
+    
+    return fondo;
 }
 
 void visualiza_escena1() 
@@ -2692,6 +2931,13 @@ void visualiza_escena1()
     for(int f = 0; f < num_frames; f++) 
     {
         double t = (double)f / (num_frames - 1);
+
+        //Fondo (Cielo)
+        Personaje *fondo = crea_fondo();
+        NodoJerarquia *nodo_fondo = crea_nodo_jerarquia(3000, 1, fondo);
+        nodo_fondo->pos_x = 0.0;
+        nodo_fondo->pos_y = 0.0;
+        nodo_fondo->escala = 1.0;
         
         //Piso (Pasto)
         Personaje *piso = crea_piso();
@@ -2699,6 +2945,7 @@ void visualiza_escena1()
         nodo_piso->pos_x = -400.0;
         nodo_piso->pos_y = 0.0;
         nodo_piso->escala = 1.0;
+        agrega_hijo_jerarquia(nodo_fondo, nodo_piso);
         
         //Pino a la derecha
         Personaje *pino = crea_pino();
@@ -2765,16 +3012,15 @@ void visualiza_escena1()
         else 
             mr_atomix->dialogo = NULL;
 
-
         NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(1, 1, mr_atomix);
-        
+
         //Movimiento horizontal de Mr. Atomix (camina de izquierda a derecha)
         nodo_atomix->pos_x = 200.0 + t * 800.0;
         nodo_atomix->pos_y = 145.0;
         nodo_atomix->escala = 28.0;
         
         //Ciclo de caminar (8 ciclos completos en 10 segundos)
-        double ciclo_caminar = sin(t * PI * 16) * 15.0; //Oscilacion de brazos y piernas
+        double ciclo_caminar = sin(t * PI * 16) * 15.0;  //Oscilacion de brazos y pierna
         
         //Anima brazos
         Personaje *brazo_izq = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
@@ -2824,8 +3070,8 @@ void visualiza_escena1()
         
         agrega_hijo_jerarquia(nodo_piso, nodo_atomix);
         
-        //Crer frame con duración de 1/30 segundo
-        Frame *frame = crea_frame(f + 1, nodo_piso, duracion_frame);
+        //Crea frame con duracion de 1/30 segundo
+        Frame *frame = crea_frame(f + 1, nodo_fondo, duracion_frame);
         agrega_frame_escena(escena_animacion, frame);
     }
     
@@ -2846,6 +3092,14 @@ int main(int argc, char** argv)
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glViewport(0, 0, 800, 600);
+
+    cola_recursos_global = crea_cola_recursos();
+
+    encola_todas_las_texturas(cola_recursos_global);
+
+    cargar_recursos(cola_recursos_global);
     
     glutDisplayFunc(display);
     glutKeyboardFunc(keyboard);
@@ -2869,9 +3123,6 @@ int main(int argc, char** argv)
     }
     
     ajusta_volumen_global(0.7);
-    
-    ColaRecursos *cola_recursos = crea_cola_recursos();
-    cargar_recursos(cola_recursos);
 
     pelicula_global = crea_pelicula();
 
@@ -2896,7 +3147,7 @@ int main(int argc, char** argv)
     glutMainLoop();
     
     cierra_audio();
-    free_cola_recursos(cola_recursos);
+    free_cola_recursos(cola_recursos_global);
     free_pelicula(pelicula_global);
     free_pila_frames(pila_deshacer);
     
