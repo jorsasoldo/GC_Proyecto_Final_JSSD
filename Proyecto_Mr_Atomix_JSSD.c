@@ -2692,9 +2692,9 @@ void encola_todas_las_texturas(ColaRecursos *cola)
 
     //Escena 4
     encola_recurso(cola, "Figuras/Texturas/atomo.jpg", 0);
-    encola_recurso(cola, "Figuras/Texturas/neutron.jpg", 0);
-    encola_recurso(cola, "Figuras/Texturas/proton.jpg", 0);
-    encola_recurso(cola, "Figuras/Texturas/electron.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/neutron.png", 0);
+    encola_recurso(cola, "Figuras/Texturas/proton.png", 0);
+    encola_recurso(cola, "Figuras/Texturas/electron.png", 0);
 }
 
 Audio *busca_audio_en_cola(ColaRecursos *cola, char *ruta) 
@@ -4100,9 +4100,9 @@ void visualiza_escena2()
             NodoJerarquia *nodo_plaqueta = crea_nodo_jerarquia(1000 + i, 1, plaqueta);
             
             //Movimiento sinusoidal vertical
-            double offset_y = sin(t * PI * 3 + i * PI / 2.5) * 60.0;
+            double nuevo_y = sin(t * PI * 3 + i * PI / 2.5) * 60.0;
             nodo_plaqueta->pos_x = pos_plaquetas[i][0];
-            nodo_plaqueta->pos_y = pos_plaquetas[i][1] + offset_y;
+            nodo_plaqueta->pos_y = pos_plaquetas[i][1] + nuevo_y;
             nodo_plaqueta->escala = 100.0;
             nodo_plaqueta->rot_z = t * 180.0 + i * 72.0; //Rotacion lenta
             
@@ -4117,10 +4117,10 @@ void visualiza_escena2()
             NodoJerarquia *nodo_blanco = crea_nodo_jerarquia(2000 + i, 1, globulo_blanco);
             
             //Movimiento sinusoidal horizontal y vertical
-            double offset_x = cos(t * PI * 2.5 + i * PI / 2) * 50.0;
-            double offset_y = sin(t * PI * 2 + i * PI / 2) * 70.0;
-            nodo_blanco->pos_x = pos_blancos[i][0] + offset_x;
-            nodo_blanco->pos_y = pos_blancos[i][1] + offset_y;
+            double nuevo_x = cos(t * PI * 2.5 + i * PI / 2) * 50.0;
+            double nuevo_y = sin(t * PI * 2 + i * PI / 2) * 70.0;
+            nodo_blanco->pos_x = pos_blancos[i][0] + nuevo_x;
+            nodo_blanco->pos_y = pos_blancos[i][1] + nuevo_y;
             nodo_blanco->escala = 100.0;
             nodo_blanco->rot_z = t * 120.0 + i * 72.0;
             
@@ -4303,10 +4303,10 @@ void visualiza_escena2()
             NodoJerarquia *nodo_rojo = crea_nodo_jerarquia(3000 + i, 1, globulo_rojo);
             
             //Movimiento sinusoidal
-            double offset_x = cos(t * PI * 3 + i * PI / 2.5) * 40.0;
-            double offset_y = sin(t * PI * 2.5 + i * PI / 3) * 80.0;
-            nodo_rojo->pos_x = pos_rojos[i][0] + offset_x;
-            nodo_rojo->pos_y = pos_rojos[i][1] + offset_y;
+            double nuevo_x = cos(t * PI * 3 + i * PI / 2.5) * 40.0;
+            double nuevo_y = sin(t * PI * 2.5 + i * PI / 3) * 80.0;
+            nodo_rojo->pos_x = pos_rojos[i][0] + nuevo_x;
+            nodo_rojo->pos_y = pos_rojos[i][1] + nuevo_y;
             nodo_rojo->escala = 100.0;
             nodo_rojo->rot_z = t * 200.0 + i * 72.0;
             
@@ -4614,10 +4614,10 @@ void visualiza_escena3()
             NodoJerarquia *nodo_adn = crea_nodo_jerarquia(6000 + i, 1, adn);
             
             //Movimiento sinusoidal
-            double offset_x = sin(t * PI * 2 + i * PI / 5) * 40.0;
-            double offset_y = cos(t * PI * 2.5 + i * PI / 4) * 30.0;
-            nodo_adn->pos_x = pos_adn[i][0] + offset_x;
-            nodo_adn->pos_y = pos_adn[i][1] + offset_y;
+            double nuevo_x = sin(t * PI * 2 + i * PI / 5) * 40.0;
+            double nuevo_y = cos(t * PI * 2.5 + i * PI / 4) * 30.0;
+            nodo_adn->pos_x = pos_adn[i][0] + nuevo_x;
+            nodo_adn->pos_y = pos_adn[i][1] + nuevo_y;
             nodo_adn->escala = 40.0;
             nodo_adn->rot_z = t * 360.0 + i * 36.0; //Rotacion continua
             
@@ -4631,10 +4631,10 @@ void visualiza_escena3()
             NodoJerarquia *nodo_mitocondria = crea_nodo_jerarquia(7000 + i, 1, mitocondria);
             
             //Movimiento sinusoidal diferente
-            double offset_x = cos(t * PI * 3 + i * PI / 3) * 50.0;
-            double offset_y = sin(t * PI * 2.2 + i * PI / 2) * 40.0;
-            nodo_mitocondria->pos_x = pos_mitocondria[i][0] + offset_x;
-            nodo_mitocondria->pos_y = pos_mitocondria[i][1] + offset_y;
+            double nuevo_x = cos(t * PI * 3 + i * PI / 3) * 50.0;
+            double nuevo_y = sin(t * PI * 2.2 + i * PI / 2) * 40.0;
+            nodo_mitocondria->pos_x = pos_mitocondria[i][0] + nuevo_x;
+            nodo_mitocondria->pos_y = pos_mitocondria[i][1] + nuevo_y;
             nodo_mitocondria->escala = 30.0;
             nodo_mitocondria->rot_z = t * 180.0 + i * 45.0;
             
@@ -4845,7 +4845,7 @@ Personaje *crea_electron()
     
     //Asigna textura al electron
     if(cola_recursos_global != NULL) 
-        electron->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/electron.jpg");
+        electron->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/electron.png");
     
     return electron;
 }
@@ -4880,7 +4880,7 @@ Personaje *crea_proton()
     
     //Asigna textura al proton
     if(cola_recursos_global != NULL) 
-        proton->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/proton.jpg");
+        proton->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/proton.png");
     
     return proton;
 }
@@ -4915,7 +4915,7 @@ Personaje *crea_neutron()
     
     //Asigna textura al proton
     if(cola_recursos_global != NULL) 
-        neutron->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/neutron.jpg");
+        neutron->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/neutron.png");
     
     return neutron;
 }
@@ -4954,6 +4954,322 @@ Personaje *crea_atomo()
     }
     
     return atomo;
+}
+
+void visualiza_escena4() 
+{
+    Escena *escena_animacion = crea_escena(4, "Dentro del Átomo");
+
+    Audio *audio_dialogo = busca_audio_en_cola(cola_recursos_global, "Audio/dialogo.mp3");
+    
+    if(audio_dialogo == NULL) 
+    {
+        puts("No se pudo cargar el audio");
+    }
+
+    float amb_fondo[4] = {0.4, 0.4, 0.45, 1.0};
+    float diff_fondo[4] = {0.7, 0.7, 0.75, 1.0};
+    float spec_fondo[4] = {0.2, 0.2, 0.25, 1.0};
+    Material *mat_fondo = crea_material(amb_fondo, diff_fondo, spec_fondo, 10.0);
+    
+    float amb_neutron[4] = {0.25, 0.25, 0.3, 1.0};
+    float diff_neutron[4] = {0.5, 0.5, 0.6, 1.0};
+    float spec_neutron[4] = {0.7, 0.7, 0.8, 1.0};
+    Material *mat_neutron = crea_material(amb_neutron, diff_neutron, spec_neutron, 50.0);
+    
+    float amb_proton[4] = {0.4, 0.1, 0.1, 1.0};
+    float diff_proton[4] = {0.9, 0.2, 0.2, 1.0};
+    float spec_proton[4] = {1.0, 0.5, 0.5, 1.0};
+    Material *mat_proton = crea_material(amb_proton, diff_proton, spec_proton, 70.0);
+    
+    float amb_electron[4] = {0.1, 0.1, 0.4, 1.0};
+    float diff_electron[4] = {0.2, 0.2, 0.9, 1.0};
+    float spec_electron[4] = {0.5, 0.5, 1.0, 1.0};
+    Material *mat_electron = crea_material(amb_electron, diff_electron, spec_electron, 80.0);
+    
+    float amb_traje[4] = {0.2, 0.15, 0.1, 1.0};
+    float diff_traje[4] = {0.5, 0.4, 0.3, 1.0};
+    float spec_traje[4] = {0.2, 0.18, 0.15, 1.0};
+    Material *mat_traje = crea_material(amb_traje, diff_traje, spec_traje, 20.0);
+    
+    float amb_casco[4] = {0.25, 0.25, 0.3, 1.0};
+    float diff_casco[4] = {0.6, 0.6, 0.7, 1.0};
+    float spec_casco[4] = {0.9, 0.9, 0.9, 1.0};
+    Material *mat_casco = crea_material(amb_casco, diff_casco, spec_casco, 80.0);
+    
+    float amb_guantes[4] = {0.15, 0.15, 0.15, 1.0};
+    float diff_guantes[4] = {0.4, 0.4, 0.4, 1.0};
+    float spec_guantes[4] = {0.3, 0.3, 0.3, 1.0};
+    Material *mat_guantes = crea_material(amb_guantes, diff_guantes, spec_guantes, 30.0);
+    
+    float pos_luz_principal[4] = {600.0, 800.0, 500.0, 0.0};
+    float amb_luz_principal[4] = {0.5, 0.5, 0.5, 1.0};
+    float diff_luz_principal[4] = {1.0, 1.0, 1.0, 1.0};
+    float spec_luz_principal[4] = {1.0, 1.0, 1.0, 1.0};
+    Luz *luz_principal = crea_luz(0, pos_luz_principal, amb_luz_principal, diff_luz_principal, spec_luz_principal);
+    
+    float pos_luz_relleno[4] = {200.0, 400.0, 300.0, 1.0};
+    float amb_luz_relleno[4] = {0.3, 0.3, 0.35, 1.0};
+    float diff_luz_relleno[4] = {0.6, 0.6, 0.65, 1.0};
+    float spec_luz_relleno[4] = {0.4, 0.4, 0.45, 1.0};
+    Luz *luz_relleno = crea_luz(1, pos_luz_relleno, amb_luz_relleno, diff_luz_relleno, spec_luz_relleno);
+    
+    int num_frames = 450;
+    double duracion_frame = 1.0 / 30.0;
+    
+    double pos_neutrones[15][2] = 
+    {
+        {200.0, 200.0}, {400.0, 400.0}, {600.0, 150.0}, {800.0, 350.0}, {1000.0, 250.0},
+        {300.0, 450.0}, {500.0, 100.0}, {700.0, 400.0}, {900.0, 100.0}, {1100.0, 300.0},
+        {150.0, 300.0}, {350.0, 150.0}, {550.0, 450.0}, {750.0, 250.0}, {950.0, 350.0}
+    };
+    
+    double pos_protones[15][2] = 
+    {
+        {250.0, 250.0}, {450.0, 350.0}, {650.0, 200.0}, {850.0, 300.0}, {1050.0, 200.0},
+        {350.0, 400.0}, {550.0, 150.0}, {750.0, 450.0}, {950.0, 150.0}, {1150.0, 250.0},
+        {200.0, 350.0}, {400.0, 200.0}, {600.0, 300.0}, {800.0, 100.0}, {1000.0, 400.0}
+    };
+    
+    double pos_electrones[10][2] = 
+    {
+        {100.0, 500.0}, {300.0, 600.0}, {500.0, 550.0}, {700.0, 650.0}, {900.0, 500.0},
+        {200.0, 650.0}, {400.0, 500.0}, {600.0, 600.0}, {800.0, 550.0}, {1000.0, 650.0}
+    };
+    
+    for(int f = 0; f < num_frames; f++) 
+    {
+        double t = (double)f / (num_frames - 1);
+
+        Personaje *fondo_atomo = crea_atomo();
+        NodoJerarquia *nodo_fondo = crea_nodo_jerarquia(4000, 1, fondo_atomo);
+        nodo_fondo->pos_x = 0.0;
+        nodo_fondo->pos_y = 0.0;
+        nodo_fondo->escala = 1.0;
+        asigna_material_personaje(fondo_atomo, mat_fondo);
+        
+        for(int i = 0; i < 15; i++) 
+        {
+            Personaje *neutron = crea_neutron();
+            NodoJerarquia *nodo_neutron = crea_nodo_jerarquia(5000 + i, 1, neutron);
+            
+            double nuevo_x = sin(t * PI * 5 + i * PI / 4) * 20.0;
+            double nuevo_y = cos(t * PI * 4.5 + i * PI / 3) * 15.0;
+            nodo_neutron->pos_x = pos_neutrones[i][0] + nuevo_x;
+            nodo_neutron->pos_y = pos_neutrones[i][1] + nuevo_y;
+            nodo_neutron->escala = 20.0;
+            nodo_neutron->rot_z = t * 120.0 + i * 24.0;
+            
+            asigna_material_personaje(neutron, mat_neutron);
+            agrega_hijo_jerarquia(nodo_fondo, nodo_neutron);
+        }
+        
+        for(int i = 0; i < 15; i++) 
+        {
+            Personaje *proton = crea_proton();
+            NodoJerarquia *nodo_proton = crea_nodo_jerarquia(6000 + i, 1, proton);
+            
+            double nuevo_x = cos(t * PI * 4 + i * PI / 3) * 25.0;
+            double nuevo_y = sin(t * PI * 3.5 + i * PI / 2) * 20.0;
+            nodo_proton->pos_x = pos_protones[i][0] + nuevo_x;
+            nodo_proton->pos_y = pos_protones[i][1] + nuevo_y;
+            nodo_proton->escala = 20.0;
+            nodo_proton->rot_z = t * 150.0 + i * 30.0;
+            
+            asigna_material_personaje(proton, mat_proton);
+            agrega_hijo_jerarquia(nodo_fondo, nodo_proton);
+        }
+        
+        for(int i = 0; i < 10; i++) 
+        {
+            Personaje *electron = crea_electron();
+            NodoJerarquia *nodo_electron = crea_nodo_jerarquia(7000 + i, 1, electron);
+            
+            double radio_orbita = 300.0 + i * 40.0;
+            double angulo_orbita = t * PI * 2 + i * PI / 5;
+            nodo_electron->pos_x = 600.0 + radio_orbita * cos(angulo_orbita);
+            nodo_electron->pos_y = 350.0 + radio_orbita * sin(angulo_orbita) * 0.7;
+            nodo_electron->escala = 15.0;
+            nodo_electron->rot_z = t * 360.0;
+            
+            asigna_material_personaje(electron, mat_electron);
+            agrega_hijo_jerarquia(nodo_fondo, nodo_electron);
+        }
+        
+        Personaje *mr_atomix = crea_mr_atomix();
+        
+        Personaje *torso = busca_parte_personaje(mr_atomix, "torso");
+
+        if(torso) 
+            asigna_material_personaje(torso, mat_traje);
+        
+        Personaje *cuello = busca_parte_personaje(mr_atomix, "cuello");
+
+        if(cuello) 
+            asigna_material_personaje(cuello, mat_traje);
+
+        Personaje *cabeza = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza) 
+            asigna_material_personaje(cabeza, mat_casco);
+        
+        Personaje *brazo_izq = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+
+        if(brazo_izq) 
+            asigna_material_personaje(brazo_izq, mat_traje);
+        
+        Personaje *brazo_der = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_der) 
+            asigna_material_personaje(brazo_der, mat_traje);
+        
+        Personaje *codo_izq = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+
+        if(codo_izq) 
+            asigna_material_personaje(codo_izq, mat_traje);
+        
+        Personaje *codo_der = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_der) 
+            asigna_material_personaje(codo_der, mat_traje);
+        
+        Personaje *mano_izq = busca_parte_personaje(mr_atomix, "mano_izquierda");
+
+        if(mano_izq) 
+            asigna_material_personaje(mano_izq, mat_guantes);
+        
+        Personaje *mano_der = busca_parte_personaje(mr_atomix, "mano_derecha");
+
+        if(mano_der) 
+            asigna_material_personaje(mano_der, mat_guantes);
+        
+        Personaje *pierna_izq = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+
+        if(pierna_izq) 
+            asigna_material_personaje(pierna_izq, mat_traje);
+        
+        Personaje *pierna_der = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_der) 
+            asigna_material_personaje(pierna_der, mat_traje);
+        
+        Personaje *rodilla_izq = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+
+        if(rodilla_izq) 
+            asigna_material_personaje(rodilla_izq, mat_traje);
+        
+        Personaje *rodilla_der = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_der) 
+            asigna_material_personaje(rodilla_der, mat_traje);
+        
+        Personaje *pie_izq = busca_parte_personaje(mr_atomix, "pie_izquierdo");
+
+        if(pie_izq) 
+            asigna_material_personaje(pie_izq, mat_guantes);
+        
+        Personaje *pie_der = busca_parte_personaje(mr_atomix, "pie_derecho");
+
+        if(pie_der) 
+            asigna_material_personaje(pie_der, mat_guantes);
+        
+        //Dialogo
+        if(f < 330) 
+        {
+            char *dialogos4[] = 
+            {
+                "Llegamos a mi casa!",
+                "Esto es un atomo.",
+                "Aunque parezco solido,",
+                "en realidad estoy",
+                "casi todo vacio."
+            };
+            
+            Dialogo *dialogo_frame = crea_dialogo(5, dialogos4, audio_dialogo);
+            
+            if(dialogo_frame != NULL) 
+            {
+                muestra_dialogo(mr_atomix, dialogo_frame);
+                dialogo_frame->tiempo_mostrado = f * duracion_frame;
+                mr_atomix->dialogo = dialogo_frame;
+            }
+        }
+        else 
+            mr_atomix->dialogo = NULL;
+
+        NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(8000, 1, mr_atomix);
+        
+        //Movimiento flotante a traves del nucleo
+        double movimiento_x = t * 700.0;
+        double movimiento_y = sin(t * PI * 3) * 80.0 + 350.0;
+        
+        nodo_atomix->pos_x = 100.0 + movimiento_x;
+        nodo_atomix->pos_y = movimiento_y;
+        nodo_atomix->escala = 10.0;
+        
+        //Animacion flotar
+        double ciclo_flotacion = sin(t * PI * 6) * 15.0;
+        
+        Personaje *brazo_izq_anim = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+        Personaje *brazo_der_anim = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_izq_anim) 
+            brazo_izq_anim->angulo_actual = ciclo_flotacion;
+
+        if(brazo_der_anim) 
+            brazo_der_anim->angulo_actual = -ciclo_flotacion;
+        
+        Personaje *pierna_izq_anim = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+        Personaje *pierna_der_anim = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_izq_anim) 
+            pierna_izq_anim->angulo_actual = -ciclo_flotacion * 0.6;
+
+        if(pierna_der_anim) 
+            pierna_der_anim->angulo_actual = ciclo_flotacion * 0.6;
+        
+        Personaje *cabeza_anim = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza_anim) 
+            cabeza_anim->angulo_actual = sin(t * PI * 4) * 8.0;
+        
+        agrega_hijo_jerarquia(nodo_fondo, nodo_atomix);
+        
+        Luz *luz_principal_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_principal_frame = *luz_principal;
+        
+        Luz *luz_relleno_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_relleno_frame = *luz_relleno;
+        
+        NodoJerarquia *nodo_luz1 = crea_nodo_jerarquia(9000, 3, luz_principal_frame);
+        NodoJerarquia *nodo_luz2 = crea_nodo_jerarquia(9001, 3, luz_relleno_frame);
+        
+        nodo_luz1->pos_x = 600.0 + sin(t * PI * 2) * 100.0;
+        nodo_luz1->pos_y = 800.0;
+        nodo_luz1->pos_z = 500.0;
+        
+        nodo_luz2->pos_x = 200.0;
+        nodo_luz2->pos_y = 400.0;
+        nodo_luz2->pos_z = 300.0;
+        
+        agrega_hijo_jerarquia(nodo_fondo, nodo_luz1);
+        agrega_hijo_jerarquia(nodo_fondo, nodo_luz2);
+        
+        Frame *frame = crea_frame(f + 1, nodo_fondo, duracion_frame);
+        agrega_frame_escena(escena_animacion, frame);
+    }
+    
+    free(mat_fondo);
+    free(mat_neutron);
+    free(mat_proton);
+    free(mat_electron);
+    free(mat_traje);
+    free(mat_casco);
+    free(mat_guantes);
+    free(luz_principal);
+    free(luz_relleno);
+    
+    encola_escena(pelicula_global, escena_animacion);
 }
 
 int main(int argc, char** argv) 
@@ -5016,6 +5332,8 @@ int main(int argc, char** argv)
     visualiza_escena2();
 
     visualiza_escena3();
+
+    visualiza_escena4();
 
     escena_actual = pelicula_global->frente;
     
