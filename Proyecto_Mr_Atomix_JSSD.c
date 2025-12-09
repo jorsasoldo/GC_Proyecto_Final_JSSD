@@ -2699,6 +2699,11 @@ void encola_todas_las_texturas(ColaRecursos *cola)
     //Escena 5
     encola_recurso(cola, "Figuras/Texturas/quark.png", 0);
     encola_recurso(cola, "Figuras/Texturas/fondo_cuantico.jpg", 0);
+
+    //Escena 6
+    encola_recurso(cola, "Figuras/Texturas/tierra.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/luna.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/basura.jpg", 0);
 }
 
 Audio *busca_audio_en_cola(ColaRecursos *cola, char *ruta) 
@@ -5673,13 +5678,374 @@ Personaje *crea_basura()
     for(int i = 0; i < num_puntos; i++) free_punto(pts_basura[i]);
 
     convierte_absolutas_a_relativas_personaje(basura, 0.0, 0.0);
-    
+
     if(cola_recursos_global != NULL)
     {
         basura->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/basura.jpg");
     }
 
     return basura;
+}
+
+Personaje *crea_luna() 
+{
+    double centro_x = 5.0;
+    double centro_y = 5.0;
+    
+    Punto *rot_luna = crea_punto(50, centro_x, centro_y, 0, 0, 0);
+    Personaje *luna = crea_personaje(20, "luna", rot_luna);
+    free(rot_luna);
+
+    int num_puntos_circulo = 20;
+    double radio_luna = 1.5;
+
+    luna->num_puntos = num_puntos_circulo;
+    luna->puntos_figura = (Punto*)malloc(num_puntos_circulo * sizeof(Punto));
+
+    for(int i = 0; i < num_puntos_circulo; i++) 
+    {
+        double angulo = 2.0 * PI * i / num_puntos_circulo;
+        luna->puntos_figura[i].id = 500 + i;
+        luna->puntos_figura[i].x = centro_x + radio_luna * cos(angulo);
+        luna->puntos_figura[i].y = centro_y + radio_luna * sin(angulo);
+        luna->puntos_figura[i].z = 0;
+        luna->puntos_figura[i].u = 0.5 + 0.5 * cos(angulo);
+        luna->puntos_figura[i].v = 0.5 + 0.5 * sin(angulo);
+    }
+    
+    convierte_absolutas_a_relativas_personaje(luna, 0.0, 0.0);
+    
+    //Asigna textura a la luna
+    if(cola_recursos_global != NULL) 
+        luna->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/luna.jpg");
+    
+    return luna;
+}
+
+Personaje *crea_vista_tierra() 
+{
+    //vista de tierra es un rectangulo grande que cubre toda las escena
+    Punto *rot_fondo = crea_punto(900, 0.0, 0.0, 0, 0, 0);
+    Personaje *fondo = crea_personaje(3000, "vista_tierra", rot_fondo);
+    free(rot_fondo);
+
+    Punto *pts_fondo[] = 
+    {
+        crea_punto(901, -1000.0, -500.0, 0, 0.0, 0.0),
+        crea_punto(902, 3000.0, -500.0, 0, 4.0, 0.0),
+        crea_punto(903, 3000.0, 1500.0, 0, 4.0, 2.0),
+        crea_punto(904, -1000.0, 1500.0, 0, 0.0, 2.0)
+    };
+    
+    fondo->num_puntos = 4;
+    fondo->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+    
+    for(int i = 0; i < 4; i++) 
+    {
+        fondo->puntos_figura[i] = *pts_fondo[i];
+        free(pts_fondo[i]);
+    }
+    
+    //Convierte coordenadas a relativas
+    convierte_absolutas_a_relativas_personaje(fondo, 0.0, 0.0);
+    
+    //Asigna textura al fondo
+    if(cola_recursos_global != NULL) 
+    {
+        fondo->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/tierra.jpg");
+    }
+    
+    return fondo;
+}
+
+void visualiza_escena6() 
+{
+    Escena *escena_animacion = crea_escena(6, "Vista Espacial");
+
+    Audio *audio_dialogo = busca_audio_en_cola(cola_recursos_global, "Audio/dialogo.mp3");
+    
+    if(audio_dialogo == NULL) 
+    {
+        puts("No se pudo cargar el audio");
+    }
+
+    float amb_tierra[4] = {0.1, 0.2, 0.4, 1.0};
+    float diff_tierra[4] = {0.2, 0.4, 0.8, 1.0};
+    float spec_tierra[4] = {0.3, 0.5, 0.9, 1.0};
+    Material *mat_tierra = crea_material(amb_tierra, diff_tierra, spec_tierra, 60.0);
+
+    float amb_luna[4] = {0.3, 0.3, 0.3, 1.0};
+    float diff_luna[4] = {0.6, 0.6, 0.6, 1.0};
+    float spec_luna[4] = {0.8, 0.8, 0.8, 1.0};
+    Material *mat_luna = crea_material(amb_luna, diff_luna, spec_luna, 40.0);
+    
+    float amb_basura[4] = {0.2, 0.2, 0.2, 1.0};
+    float diff_basura[4] = {0.5, 0.5, 0.5, 1.0};
+    float spec_basura[4] = {0.7, 0.7, 0.7, 1.0};
+    Material *mat_basura = crea_material(amb_basura, diff_basura, spec_basura, 50.0);
+    
+    float amb_traje[4] = {0.15, 0.12, 0.1, 1.0};
+    float diff_traje[4] = {0.4, 0.35, 0.3, 1.0};
+    float spec_traje[4] = {0.6, 0.55, 0.5, 1.0};
+    Material *mat_traje = crea_material(amb_traje, diff_traje, spec_traje, 70.0);
+    
+    float amb_casco[4] = {0.2, 0.2, 0.25, 1.0};
+    float diff_casco[4] = {0.5, 0.5, 0.6, 1.0};
+    float spec_casco[4] = {1.0, 1.0, 1.0, 1.0};
+    Material *mat_casco = crea_material(amb_casco, diff_casco, spec_casco, 100.0);
+    
+    float amb_guantes[4] = {0.15, 0.15, 0.15, 1.0};
+    float diff_guantes[4] = {0.4, 0.4, 0.4, 1.0};
+    float spec_guantes[4] = {0.6, 0.6, 0.6, 1.0};
+    Material *mat_guantes = crea_material(amb_guantes, diff_guantes, spec_guantes, 40.0);
+
+    float pos_luz_sol[4] = {2000.0, 1500.0, 1000.0, 0.0};
+    float amb_luz_sol[4] = {0.4, 0.4, 0.4, 1.0};
+    float diff_luz_sol[4] = {1.0, 1.0, 0.95, 1.0};
+    float spec_luz_sol[4] = {1.0, 1.0, 1.0, 1.0};
+    Luz *luz_sol = crea_luz(0, pos_luz_sol, amb_luz_sol, diff_luz_sol, spec_luz_sol);
+    
+    float pos_luz_tierra[4] = {600.0, 400.0, 0.0, 1.0};
+    float amb_luz_tierra[4] = {0.1, 0.2, 0.3, 1.0};
+    float diff_luz_tierra[4] = {0.2, 0.3, 0.5, 1.0};
+    float spec_luz_tierra[4] = {0.3, 0.4, 0.6, 1.0};
+    Luz *luz_tierra = crea_luz(1, pos_luz_tierra, amb_luz_tierra, diff_luz_tierra, spec_luz_tierra);
+    
+    int num_frames = 450;
+    double duracion_frame = 1.0 / 30.0;
+    
+    //Posiciones iniciales para basura espacial (distribucion orbital)
+    double pos_basura[20][2];
+
+    for(int i = 0; i < 20; i++) 
+    {
+        double angulo = 2.0 * PI * i / 20;
+        double radio = 400.0 + (i % 5) * 100.0;
+        pos_basura[i][0] = 600.0 + radio * cos(angulo);
+        pos_basura[i][1] = 400.0 + radio * sin(angulo) * 0.8;
+    }
+    
+    for(int f = 0; f < num_frames; f++) 
+    {
+        double t = (double)f / (num_frames - 1);
+
+        //Fondo con vista de la Tierra
+        Personaje *tierra_fondo = crea_vista_tierra();
+        NodoJerarquia *nodo_tierra = crea_nodo_jerarquia(20000, 1, tierra_fondo);
+        nodo_tierra->pos_x = 0.0;
+        nodo_tierra->pos_y = 0.0;
+        nodo_tierra->escala = 1.0;
+        asigna_material_personaje(tierra_fondo, mat_tierra);
+        
+        for(int i = 0; i < 20; i++) 
+        {
+            Personaje *basura = crea_basura();
+            NodoJerarquia *nodo_basura = crea_nodo_jerarquia(22000 + i, 1, basura);
+            
+            //Movimiento orbital lento con desfase
+            double angulo_orbita = t * PI * 0.5 + (i * PI / 10);
+            double radio_orbita = 400.0 + (i % 5) * 100.0;
+            double offset_x = sin(t * PI * 3 + i * PI / 4) * 30.0; //Temblor leve
+            double offset_y = cos(t * PI * 2.5 + i * PI / 3) * 25.0;
+            
+            nodo_basura->pos_x = 600.0 + radio_orbita * cos(angulo_orbita) + offset_x;
+            nodo_basura->pos_y = 400.0 + radio_orbita * sin(angulo_orbita) * 0.8 + offset_y;
+            nodo_basura->escala = 15.0 + (i % 3) * 5.0; //Tamaños variados
+            
+            //Rotacion propia
+            nodo_basura->rot_z = t * 180.0 + i * 18.0;
+            
+            asigna_material_personaje(basura, mat_basura);
+            agrega_hijo_jerarquia(nodo_tierra, nodo_basura);
+        }
+        
+        Personaje *luna = crea_luna();
+        NodoJerarquia *nodo_luna = crea_nodo_jerarquia(21000, 1, luna);
+        
+        //Orbita de la Luna alrededor de la Tierra
+        double angulo_luna = t * PI * 0.8;
+        double radio_luna_orbita = 800.0;
+        nodo_luna->pos_x = 600.0 + radio_luna_orbita * cos(angulo_luna);
+        nodo_luna->pos_y = 400.0 + radio_luna_orbita * sin(angulo_luna) * 0.7;
+        nodo_luna->escala = 60.0;
+        nodo_luna->rot_z = t * 90.0;
+        
+        asigna_material_personaje(luna, mat_luna);
+        agrega_hijo_jerarquia(nodo_tierra, nodo_luna);
+        
+        Personaje *mr_atomix = crea_mr_atomix();
+
+        Personaje *torso = busca_parte_personaje(mr_atomix, "torso");
+
+        if(torso) 
+            asigna_material_personaje(torso, mat_traje);
+        
+        Personaje *cuello = busca_parte_personaje(mr_atomix, "cuello");
+
+        if(cuello) 
+            asigna_material_personaje(cuello, mat_traje);
+
+        Personaje *cabeza = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza) 
+            asigna_material_personaje(cabeza, mat_casco);
+        
+        Personaje *brazo_izq = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+
+        if(brazo_izq) 
+            asigna_material_personaje(brazo_izq, mat_traje);
+        
+        Personaje *brazo_der = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_der) 
+            asigna_material_personaje(brazo_der, mat_traje);
+        
+        Personaje *codo_izq = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+
+        if(codo_izq) 
+            asigna_material_personaje(codo_izq, mat_traje);
+        
+        Personaje *codo_der = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_der) 
+            asigna_material_personaje(codo_der, mat_traje);
+        
+        Personaje *mano_izq = busca_parte_personaje(mr_atomix, "mano_izquierda");
+
+        if(mano_izq) 
+            asigna_material_personaje(mano_izq, mat_guantes);
+        
+        Personaje *mano_der = busca_parte_personaje(mr_atomix, "mano_derecha");
+
+        if(mano_der) 
+            asigna_material_personaje(mano_der, mat_guantes);
+        
+        Personaje *pierna_izq = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+
+        if(pierna_izq) 
+            asigna_material_personaje(pierna_izq, mat_traje);
+        
+        Personaje *pierna_der = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_der) 
+            asigna_material_personaje(pierna_der, mat_traje);
+        
+        Personaje *rodilla_izq = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+
+        if(rodilla_izq) 
+            asigna_material_personaje(rodilla_izq, mat_traje);
+        
+        Personaje *rodilla_der = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_der) 
+            asigna_material_personaje(rodilla_der, mat_traje);
+        
+        Personaje *pie_izq = busca_parte_personaje(mr_atomix, "pie_izquierdo");
+
+        if(pie_izq) 
+            asigna_material_personaje(pie_izq, mat_guantes);
+        
+        Personaje *pie_der = busca_parte_personaje(mr_atomix, "pie_derecho");
+
+        if(pie_der) 
+            asigna_material_personaje(pie_der, mat_guantes);
+        
+        //Dialogo
+        if(f < 330) 
+        {
+            char *dialogos6[] = 
+            {
+                "Woooah! Creciendo a la",
+                "velocidad de la luz! Aqui",
+                "esta la Tierra. Nuestro",
+                "hermoso hogar azul."
+            };
+            
+            Dialogo *dialogo_frame = crea_dialogo(4, dialogos6, audio_dialogo);
+            
+            if(dialogo_frame != NULL) 
+            {
+                muestra_dialogo(mr_atomix, dialogo_frame);
+                dialogo_frame->tiempo_mostrado = f * duracion_frame;
+                mr_atomix->dialogo = dialogo_frame;
+            }
+        }
+        else 
+            mr_atomix->dialogo = NULL;
+
+        NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(23000, 1, mr_atomix);
+        
+        //Movimiento flotante en el espacio con orbita baja
+        double angulo_atomix = t * PI * 1.5;
+        double radio_atomix = 300.0;
+        double altura_variacion = sin(t * PI * 4) * 30.0;
+        
+        nodo_atomix->pos_x = 600.0 + radio_atomix * cos(angulo_atomix);
+        nodo_atomix->pos_y = 400.0 + radio_atomix * sin(angulo_atomix) * 0.6 + altura_variacion;
+        nodo_atomix->escala = 25.0;
+
+        //flota con simulacion sin gravedad
+        double ciclo_flotacion = sin(t * PI * 6) * 15.0;
+        
+        Personaje *brazo_izq_anim = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+        Personaje *brazo_der_anim = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_izq_anim) 
+            brazo_izq_anim->angulo_actual = ciclo_flotacion;
+
+        if(brazo_der_anim) 
+            brazo_der_anim->angulo_actual = -ciclo_flotacion;
+        
+        Personaje *pierna_izq_anim = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+        Personaje *pierna_der_anim = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_izq_anim) 
+            pierna_izq_anim->angulo_actual = -ciclo_flotacion * 0.6;
+
+        if(pierna_der_anim) 
+            pierna_der_anim->angulo_actual = ciclo_flotacion * 0.6;
+        
+        Personaje *cabeza_anim = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza_anim) 
+            cabeza_anim->angulo_actual = sin(t * PI * 4) * 10.0;
+        
+        agrega_hijo_jerarquia(nodo_tierra, nodo_atomix);
+        
+        Luz *luz_sol_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_sol_frame = *luz_sol;
+        
+        Luz *luz_tierra_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_tierra_frame = *luz_tierra;
+        
+        NodoJerarquia *nodo_luz_sol = crea_nodo_jerarquia(24000, 3, luz_sol_frame);
+        NodoJerarquia *nodo_luz_tierra = crea_nodo_jerarquia(24001, 3, luz_tierra_frame);
+        
+        nodo_luz_sol->pos_x = 2000.0 + sin(t * PI * 0.3) * 500.0;
+        nodo_luz_sol->pos_y = 1500.0;
+        nodo_luz_sol->pos_z = 1000.0;
+        
+        nodo_luz_tierra->pos_x = 600.0;
+        nodo_luz_tierra->pos_y = 400.0;
+        nodo_luz_tierra->pos_z = 0.0;
+        
+        agrega_hijo_jerarquia(nodo_tierra, nodo_luz_sol);
+        agrega_hijo_jerarquia(nodo_tierra, nodo_luz_tierra);
+        
+        Frame *frame = crea_frame(f + 1, nodo_tierra, duracion_frame);
+        agrega_frame_escena(escena_animacion, frame);
+    }
+    
+    free(mat_tierra);
+    free(mat_luna);
+    free(mat_basura);
+    free(mat_traje);
+    free(mat_casco);
+    free(mat_guantes);
+    free(luz_sol);
+    free(luz_tierra);
+    
+    encola_escena(pelicula_global, escena_animacion);
 }
 
 int main(int argc, char** argv) 
@@ -5746,6 +6112,8 @@ int main(int argc, char** argv)
     visualiza_escena4();
 
     visualiza_escena5();
+
+    visualiza_escena6();
 
     escena_actual = pelicula_global->frente;
     
