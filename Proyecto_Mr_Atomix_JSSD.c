@@ -2695,6 +2695,10 @@ void encola_todas_las_texturas(ColaRecursos *cola)
     encola_recurso(cola, "Figuras/Texturas/neutron.png", 0);
     encola_recurso(cola, "Figuras/Texturas/proton.png", 0);
     encola_recurso(cola, "Figuras/Texturas/electron.png", 0);
+
+    //Escena 5
+    encola_recurso(cola, "Figuras/Texturas/quark.png", 0);
+    encola_recurso(cola, "Figuras/Texturas/fondo_cuantico.jpg", 0);
 }
 
 Audio *busca_audio_en_cola(ColaRecursos *cola, char *ruta) 
@@ -5270,6 +5274,77 @@ void visualiza_escena4()
     free(luz_relleno);
     
     encola_escena(pelicula_global, escena_animacion);
+}
+
+Personaje *crea_quark() 
+{
+    double centro_x = 5.0;
+    double centro_y = 5.0;
+    
+    Punto *rot_quark = crea_punto(50, centro_x, centro_y, 0, 0, 0);
+    Personaje *quark = crea_personaje(20, "quark", rot_quark);
+    free(rot_quark);
+
+    int num_puntos_circulo = 20;
+    double radio_quark = 1.5;
+
+    quark->num_puntos = num_puntos_circulo;
+    quark->puntos_figura = (Punto*)malloc(num_puntos_circulo * sizeof(Punto));
+
+    for(int i = 0; i < num_puntos_circulo; i++) 
+    {
+        double angulo = 2.0 * PI * i / num_puntos_circulo;
+        quark->puntos_figura[i].id = 500 + i;
+        quark->puntos_figura[i].x = centro_x + radio_quark * cos(angulo);
+        quark->puntos_figura[i].y = centro_y + radio_quark * sin(angulo);
+        quark->puntos_figura[i].z = 0;
+        quark->puntos_figura[i].u = 0.5 + 0.5 * cos(angulo);
+        quark->puntos_figura[i].v = 0.5 + 0.5 * sin(angulo);
+    }
+    
+    convierte_absolutas_a_relativas_personaje(quark, 0.0, 0.0);
+    
+    //Asigna textura al quark
+    if(cola_recursos_global != NULL) 
+        quark->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/quark.png");
+    
+    return quark;
+}
+
+Personaje *crea_fondo_cuantico() 
+{
+    //fondo cuantico es un rectangulo grande que cubre toda las escena
+    Punto *rot_fondo = crea_punto(900, 0.0, 0.0, 0, 0, 0);
+    Personaje *fondo = crea_personaje(3000, "fondo_cuantico", rot_fondo);
+    free(rot_fondo);
+
+    Punto *pts_fondo[] = 
+    {
+        crea_punto(901, -1000.0, -500.0, 0, 0.0, 0.0),
+        crea_punto(902, 3000.0, -500.0, 0, 4.0, 0.0),
+        crea_punto(903, 3000.0, 1500.0, 0, 4.0, 2.0),
+        crea_punto(904, -1000.0, 1500.0, 0, 0.0, 2.0)
+    };
+    
+    fondo->num_puntos = 4;
+    fondo->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+    
+    for(int i = 0; i < 4; i++) 
+    {
+        fondo->puntos_figura[i] = *pts_fondo[i];
+        free(pts_fondo[i]);
+    }
+    
+    //Convierte coordenadas a relativas
+    convierte_absolutas_a_relativas_personaje(fondo, 0.0, 0.0);
+    
+    //Asigna textura al fondo
+    if(cola_recursos_global != NULL) 
+    {
+        fondo->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/fondo_cuantico.jpg");
+    }
+    
+    return fondo;
 }
 
 int main(int argc, char** argv) 
