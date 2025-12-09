@@ -6112,10 +6112,10 @@ Personaje *crea_vista_sol()
 
     Punto *pts_fondo[] = 
     {
-        crea_punto(901, -1000.0, -500.0, 0, 0.0, 0.0),
-        crea_punto(902, 3000.0, -500.0, 0, 4.0, 0.0),
-        crea_punto(903, 3000.0, 1500.0, 0, 4.0, 2.0),
-        crea_punto(904, -1000.0, 1500.0, 0, 0.0, 2.0)
+        crea_punto(30001, -4000.0, -3000.0, 0, 0.0, 0.0),
+        crea_punto(30002, 6000.0, -3000.0, 0, 12.0, 0.0),
+        crea_punto(30003, 6000.0, 4000.0, 0, 12.0, 7.0),
+        crea_punto(30004, -4000.0, 4000.0, 0, 0.0, 7.0)
     };
     
     fondo->num_puntos = 4;
@@ -6137,6 +6137,300 @@ Personaje *crea_vista_sol()
     }
     
     return fondo;
+}
+
+void visualiza_escena7() 
+{
+    Escena *escena_animacion = crea_escena(7, "Cercania al Sol");
+
+    Audio *audio_dialogo = busca_audio_en_cola(cola_recursos_global, "Audio/dialogo.mp3");
+    
+    if(audio_dialogo == NULL) 
+    {
+        puts("No se pudo cargar el audio");
+    }
+
+
+    float amb_sol[4] = {0.8, 0.6, 0.3, 1.0};
+    float diff_sol[4] = {1.0, 0.8, 0.4, 1.0};
+    float spec_sol[4] = {1.0, 1.0, 0.9, 1.0};
+    Material *mat_sol = crea_material(amb_sol, diff_sol, spec_sol, 120.0);
+    
+    float amb_asteroide[4] = {0.4, 0.2, 0.1, 1.0};
+    float diff_asteroide[4] = {0.7, 0.4, 0.2, 1.0};
+    float spec_asteroide[4] = {0.9, 0.6, 0.3, 1.0};
+    Material *mat_asteroide = crea_material(amb_asteroide, diff_asteroide, spec_asteroide, 60.0);
+    
+    float amb_traje[4] = {0.3, 0.2, 0.15, 1.0};
+    float diff_traje[4] = {0.6, 0.5, 0.4, 1.0};
+    float spec_traje[4] = {1.0, 0.9, 0.8, 1.0};
+    Material *mat_traje = crea_material(amb_traje, diff_traje, spec_traje, 90.0);
+    
+    float amb_casco[4] = {0.4, 0.35, 0.3, 1.0};
+    float diff_casco[4] = {0.8, 0.7, 0.6, 1.0};
+    float spec_casco[4] = {1.0, 1.0, 1.0, 1.0};
+    Material *mat_casco = crea_material(amb_casco, diff_casco, spec_casco, 150.0);
+    
+    float amb_guantes[4] = {0.25, 0.2, 0.15, 1.0};
+    float diff_guantes[4] = {0.5, 0.4, 0.3, 1.0};
+    float spec_guantes[4] = {0.8, 0.7, 0.6, 1.0};
+    Material *mat_guantes = crea_material(amb_guantes, diff_guantes, spec_guantes, 70.0);
+    
+    float pos_luz_sol[4] = {800.0, 600.0, 500.0, 0.0};
+    float amb_luz_sol[4] = {0.6, 0.4, 0.2, 1.0};
+    float diff_luz_sol[4] = {1.0, 0.8, 0.4, 1.0};
+    float spec_luz_sol[4] = {1.0, 0.9, 0.5, 1.0};
+    Luz *luz_sol = crea_luz(0, pos_luz_sol, amb_luz_sol, diff_luz_sol, spec_luz_sol);
+
+    float pos_luz_calor[4] = {400.0, 300.0, 200.0, 1.0};
+    float amb_luz_calor[4] = {0.5, 0.3, 0.1, 1.0};
+    float diff_luz_calor[4] = {0.7, 0.5, 0.2, 1.0};
+    float spec_luz_calor[4] = {0.8, 0.6, 0.3, 1.0};
+    Luz *luz_calor = crea_luz(1, pos_luz_calor, amb_luz_calor, diff_luz_calor, spec_luz_calor);
+    
+    float pos_luz_resplandor[4] = {1000.0, 800.0, 600.0, 0.0};
+    float amb_luz_resplandor[4] = {0.7, 0.5, 0.3, 1.0};
+    float diff_luz_resplandor[4] = {0.9, 0.7, 0.4, 1.0};
+    float spec_luz_resplandor[4] = {1.0, 0.8, 0.5, 1.0};
+    Luz *luz_resplandor = crea_luz(2, pos_luz_resplandor, amb_luz_resplandor, diff_luz_resplandor, spec_luz_resplandor);
+    
+    int num_frames = 450;
+    double duracion_frame = 1.0 / 30.0;
+    
+    double pos_asteroides[25][2];
+
+    for(int i = 0; i < 25; i++) 
+    {
+        double angulo = 2.0 * PI * i / 25;
+        double radio = 500.0 + (i % 7) * 150.0;
+        pos_asteroides[i][0] = 800.0 + radio * cos(angulo);
+        pos_asteroides[i][1] = 600.0 + radio * sin(angulo) * 0.7;
+    }
+    
+    for(int f = 0; f < num_frames; f++) 
+    {
+        double t = (double)f / (num_frames - 1);
+
+        Personaje *sol_fondo = crea_vista_sol();
+        NodoJerarquia *nodo_sol = crea_nodo_jerarquia(30000, 1, sol_fondo);
+        nodo_sol->pos_x = 0.0;
+        nodo_sol->pos_y = 0.0;
+        nodo_sol->escala = 1.0;
+        
+        //Efecto de pulso solar (de escala y brillo)
+        double pulso_solar = 1.0 + sin(t * PI * 10) * 0.05;
+        nodo_sol->escala = pulso_solar;
+        
+        asigna_material_personaje(sol_fondo, mat_sol);
+        
+        for(int i = 0; i < 25; i++) 
+        {
+            Personaje *asteroide = crea_asteroide();
+            NodoJerarquia *nodo_asteroide = crea_nodo_jerarquia(32000 + i, 1, asteroide);
+            
+            //Movimiento orbital alrededor del sol con perturbaciones
+            double angulo_orbita = t * PI * 0.6 + (i * PI / 12.5);
+            double radio_orbita = 500.0 + (i % 7) * 150.0;
+            double perturbacion_x = sin(t * PI * 8 + i * PI / 5) * 40.0;
+            double perturbacion_y = cos(t * PI * 7 + i * PI / 4) * 35.0;
+            
+            nodo_asteroide->pos_x = 800.0 + radio_orbita * cos(angulo_orbita) + perturbacion_x;
+            nodo_asteroide->pos_y = 600.0 + radio_orbita * sin(angulo_orbita) * 0.7 + perturbacion_y;
+            nodo_asteroide->escala = 20.0 + (i % 5) * 8.0; //Tamaños variados
+            
+            //Rotación propia mas rapida por el calor
+            nodo_asteroide->rot_z = t * 300.0 + i * 24.0;
+            
+            //Efecto de calentamiento
+            double efecto_calor = 0.9 + sin(t * PI * 15 + i) * 0.1;
+            nodo_asteroide->escala *= efecto_calor;
+            
+            asigna_material_personaje(asteroide, mat_asteroide);
+            agrega_hijo_jerarquia(nodo_sol, nodo_asteroide);
+        }
+        
+        Personaje *mr_atomix = crea_mr_atomix();
+
+        Personaje *torso = busca_parte_personaje(mr_atomix, "torso");
+
+        if(torso) 
+            asigna_material_personaje(torso, mat_traje);
+        
+        Personaje *cuello = busca_parte_personaje(mr_atomix, "cuello");
+
+        if(cuello) 
+            asigna_material_personaje(cuello, mat_traje);
+
+        Personaje *cabeza = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza) 
+            asigna_material_personaje(cabeza, mat_casco);
+        
+        Personaje *brazo_izq = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+
+        if(brazo_izq) 
+            asigna_material_personaje(brazo_izq, mat_traje);
+        
+        Personaje *brazo_der = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_der) 
+            asigna_material_personaje(brazo_der, mat_traje);
+        
+        Personaje *codo_izq = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+
+        if(codo_izq) 
+            asigna_material_personaje(codo_izq, mat_traje);
+        
+        Personaje *codo_der = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_der)
+            asigna_material_personaje(codo_der, mat_traje);
+        
+        Personaje *mano_izq = busca_parte_personaje(mr_atomix, "mano_izquierda");
+
+        if(mano_izq) 
+            asigna_material_personaje(mano_izq, mat_guantes);
+        
+        Personaje *mano_der = busca_parte_personaje(mr_atomix, "mano_derecha");
+
+        if(mano_der) 
+            asigna_material_personaje(mano_der, mat_guantes);
+        
+        Personaje *pierna_izq = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+
+        if(pierna_izq) 
+            asigna_material_personaje(pierna_izq, mat_traje);
+        
+        Personaje *pierna_der = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_der) 
+            asigna_material_personaje(pierna_der, mat_traje);
+        
+        Personaje *rodilla_izq = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+
+        if(rodilla_izq) 
+            asigna_material_personaje(rodilla_izq, mat_traje);
+        
+        Personaje *rodilla_der = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_der) 
+            asigna_material_personaje(rodilla_der, mat_traje);
+        
+        Personaje *pie_izq = busca_parte_personaje(mr_atomix, "pie_izquierdo");
+
+        if(pie_izq) 
+            asigna_material_personaje(pie_izq, mat_guantes);
+        
+        Personaje *pie_der = busca_parte_personaje(mr_atomix, "pie_derecho");
+
+        if(pie_der) 
+            asigna_material_personaje(pie_der, mat_guantes);
+        
+        //Dialogo
+        if(f < 330) 
+        {
+            char *dialogos7[] = 
+            {
+                "Que calor! Ese es el Sol.",
+                "Es tan grande que cabrian",
+                "un millon de Tierras",
+                "dentro de él."
+            };
+            
+            Dialogo *dialogo_frame = crea_dialogo(4, dialogos7, audio_dialogo);
+            
+            if(dialogo_frame != NULL) 
+            {
+                muestra_dialogo(mr_atomix, dialogo_frame);
+                dialogo_frame->tiempo_mostrado = f * duracion_frame;
+                mr_atomix->dialogo = dialogo_frame;
+            }
+        }
+        else 
+            mr_atomix->dialogo = NULL;
+
+        NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(33000, 1, mr_atomix);
+        
+        //Movimiento de alejamiento del sol
+        double distancia_segura = 900.0;
+        double angulo_atomix = t * PI * 0.8;
+        double variacion_calor = sin(t * PI * 5) * 50.0;
+        
+        nodo_atomix->pos_x = 800.0 + distancia_segura * cos(angulo_atomix);
+        nodo_atomix->pos_y = 600.0 + distancia_segura * sin(angulo_atomix) * 0.6 + variacion_calor;
+        nodo_atomix->escala = 15.0;
+        
+        double efecto_calor_atomix = 1.0 + sin(t * PI * 12) * 0.03;
+        nodo_atomix->escala *= efecto_calor_atomix;
+        
+        double ciclo_calor = sin(t * PI * 4) * 8.0;
+        
+        Personaje *brazo_izq_anim = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+        Personaje *brazo_der_anim = busca_parte_personaje(mr_atomix, "brazo_derecho");
+        if(brazo_izq_anim) brazo_izq_anim->angulo_actual = ciclo_calor;
+        if(brazo_der_anim) brazo_der_anim->angulo_actual = -ciclo_calor;
+        
+        Personaje *pierna_izq_anim = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+        Personaje *pierna_der_anim = busca_parte_personaje(mr_atomix, "pierna_derecha");
+        if(pierna_izq_anim) pierna_izq_anim->angulo_actual = -ciclo_calor * 0.4;
+        if(pierna_der_anim) pierna_der_anim->angulo_actual = ciclo_calor * 0.4;
+        
+        Personaje *cabeza_anim = busca_parte_personaje(mr_atomix, "cabeza");
+        if(cabeza_anim) cabeza_anim->angulo_actual = sin(t * PI * 3) * 5.0;
+        
+        agrega_hijo_jerarquia(nodo_sol, nodo_atomix);
+        
+        Luz *luz_sol_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_sol_frame = *luz_sol;
+        
+        Luz *luz_calor_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_calor_frame = *luz_calor;
+        
+        Luz *luz_resplandor_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_resplandor_frame = *luz_resplandor;
+        
+        NodoJerarquia *nodo_luz_sol = crea_nodo_jerarquia(34000, 3, luz_sol_frame);
+        NodoJerarquia *nodo_luz_calor = crea_nodo_jerarquia(34001, 3, luz_calor_frame);
+        NodoJerarquia *nodo_luz_resplandor = crea_nodo_jerarquia(34002, 3, luz_resplandor_frame);
+        
+        double pulso_luz = 1.0 + sin(t * PI * 8) * 0.2;
+        
+        nodo_luz_sol->pos_x = 800.0;
+        nodo_luz_sol->pos_y = 600.0;
+        nodo_luz_sol->pos_z = 500.0;
+        
+        for(int j = 0; j < 4; j++) 
+        {
+            luz_sol_frame->ambiental[j] = amb_luz_sol[j] * pulso_luz;
+            luz_sol_frame->difusa[j] = diff_luz_sol[j] * pulso_luz;
+        }
+        
+        nodo_luz_calor->pos_x = 400.0 + sin(t * PI * 3) * 200.0;
+        nodo_luz_calor->pos_y = 300.0 + cos(t * PI * 2.5) * 150.0;
+        nodo_luz_calor->pos_z = 200.0;
+        
+        nodo_luz_resplandor->pos_x = 1000.0 + cos(t * PI * 2) * 300.0;
+        nodo_luz_resplandor->pos_y = 800.0 + sin(t * PI * 1.8) * 200.0;
+        nodo_luz_resplandor->pos_z = 600.0;
+        
+        agrega_hijo_jerarquia(nodo_sol, nodo_luz_sol);
+        agrega_hijo_jerarquia(nodo_sol, nodo_luz_calor);
+        agrega_hijo_jerarquia(nodo_sol, nodo_luz_resplandor);
+        
+        Frame *frame = crea_frame(f + 1, nodo_sol, duracion_frame);
+        agrega_frame_escena(escena_animacion, frame);
+    }
+    
+    free(mat_sol);
+    free(mat_asteroide);
+    free(mat_traje);
+    free(mat_casco);
+    free(mat_guantes);
+    free(luz_sol);
+    free(luz_calor);
+    free(luz_resplandor);
+    
+    encola_escena(pelicula_global, escena_animacion);
 }
 
 int main(int argc, char** argv) 
@@ -6194,17 +6488,19 @@ int main(int argc, char** argv)
 
     pelicula_global = crea_pelicula();
 
-    visualiza_escena1();
+    //visualiza_escena1();
 
-    visualiza_escena2();
+    //visualiza_escena2();
 
-    visualiza_escena3();
+    //visualiza_escena3();
 
-    visualiza_escena4();
+    //visualiza_escena4();
 
-    visualiza_escena5();
+    //visualiza_escena5();
 
-    visualiza_escena6();
+    //visualiza_escena6();
+
+    visualiza_escena7();
 
     escena_actual = pelicula_global->frente;
     
