@@ -5347,6 +5347,291 @@ Personaje *crea_fondo_cuantico()
     return fondo;
 }
 
+void visualiza_escena5() 
+{
+    Escena *escena_animacion = crea_escena(5, "Mundo Cuantico");
+
+    Audio *audio_dialogo = busca_audio_en_cola(cola_recursos_global, "Audio/dialogo.mp3");
+    
+    if(audio_dialogo == NULL) 
+    {
+        puts("No se pudo cargar el audio");
+    }
+
+    float amb_fondo[4] = {0.02, 0.02, 0.08, 1.0};
+    float diff_fondo[4] = {0.05, 0.05, 0.15, 1.0};
+    float spec_fondo[4] = {0.01, 0.01, 0.03, 1.0};
+    Material *mat_fondo = crea_material(amb_fondo, diff_fondo, spec_fondo, 1.0);
+    
+    float amb_quark[4] = {0.05, 0.05, 0.4, 1.0};
+    float diff_quark[4] = {0.1, 0.1, 1.0, 1.0};
+    float spec_quark[4] = {0.5, 0.5, 1.0, 1.0};
+    Material *mat_quark = crea_material(amb_quark, diff_quark, spec_quark, 100.0);
+    
+    float amb_traje[4] = {0.1, 0.08, 0.05, 1.0};
+    float diff_traje[4] = {0.4, 0.3, 0.2, 1.0};
+    float spec_traje[4] = {0.3, 0.25, 0.2, 1.0};
+    Material *mat_traje = crea_material(amb_traje, diff_traje, spec_traje, 30.0);
+    
+    float amb_casco[4] = {0.15, 0.15, 0.2, 1.0};
+    float diff_casco[4] = {0.5, 0.5, 0.6, 1.0};
+    float spec_casco[4] = {0.8, 0.8, 0.9, 1.0};
+    Material *mat_casco = crea_material(amb_casco, diff_casco, spec_casco, 90.0);
+    
+    float amb_guantes[4] = {0.08, 0.08, 0.08, 1.0};
+    float diff_guantes[4] = {0.3, 0.3, 0.3, 1.0};
+    float spec_guantes[4] = {0.2, 0.2, 0.2, 1.0};
+    Material *mat_guantes = crea_material(amb_guantes, diff_guantes, spec_guantes, 20.0);
+    
+    float pos_luz_principal[4] = {800.0, 600.0, 400.0, 0.0};
+    float amb_luz_principal[4] = {0.1, 0.1, 0.2, 1.0};
+    float diff_luz_principal[4] = {0.3, 0.3, 0.6, 1.0};
+    float spec_luz_principal[4] = {0.5, 0.5, 0.8, 1.0};
+    Luz *luz_principal = crea_luz(0, pos_luz_principal, amb_luz_principal, diff_luz_principal, spec_luz_principal);
+    
+    float pos_luz_secundaria[4] = {200.0, 300.0, 100.0, 1.0};
+    float amb_luz_secundaria[4] = {0.05, 0.1, 0.05, 1.0};
+    float diff_luz_secundaria[4] = {0.1, 0.3, 0.1, 1.0};
+    float spec_luz_secundaria[4] = {0.2, 0.4, 0.2, 1.0};
+    Luz *luz_secundaria = crea_luz(1, pos_luz_secundaria, amb_luz_secundaria, diff_luz_secundaria, spec_luz_secundaria);
+    
+    float pos_luz_quarks[4] = {600.0, 400.0, 200.0, 1.0};
+    float amb_luz_quarks[4] = {0.2, 0.2, 0.3, 1.0};
+    float diff_luz_quarks[4] = {0.6, 0.6, 0.8, 1.0};
+    float spec_luz_quarks[4] = {0.9, 0.9, 1.0, 1.0};
+    Luz *luz_quarks = crea_luz(2, pos_luz_quarks, amb_luz_quarks, diff_luz_quarks, spec_luz_quarks);
+    
+    int num_frames = 450;
+    double duracion_frame = 1.0 / 30.0;
+    
+    //Posiciones iniciales para los quarks para que tengan movimiento caotico
+    double pos_quarks[25][2];
+
+    for(int i = 0; i < 25; i++) 
+    {
+        pos_quarks[i][0] = 100.0 + (i % 5) * 200.0;
+        pos_quarks[i][1] = 100.0 + (i / 5) * 150.0;
+    }
+    
+    for(int f = 0; f < num_frames; f++) 
+    {
+        double t = (double)f / (num_frames - 1);
+
+        Personaje *fondo_cuantico = crea_fondo_cuantico();
+        NodoJerarquia *nodo_fondo = crea_nodo_jerarquia(10000, 1, fondo_cuantico);
+        nodo_fondo->pos_x = 0.0;
+        nodo_fondo->pos_y = 0.0;
+        nodo_fondo->escala = 1.0;
+        asigna_material_personaje(fondo_cuantico, mat_fondo);
+        
+        for(int i = 0; i < 25; i++) 
+        {
+            Personaje *quark = crea_quark();
+            NodoJerarquia *nodo_quark = crea_nodo_jerarquia(11000 + i, 1, quark);
+            
+            //Movimiento cuantico (temblor aleatorio + movimiento orbital pequeño)
+            double temblor_x = sin(t * PI * 20 + i * PI / 3) * 15.0;
+            double temblor_y = cos(t * PI * 18 + i * PI / 2) * 12.0;
+            double orbita_x = sin(t * PI * 2 + i * PI / 4) * 50.0;
+            double orbita_y = cos(t * PI * 1.8 + i * PI / 4) * 40.0;
+            
+            nodo_quark->pos_x = pos_quarks[i][0] + temblor_x + orbita_x;
+            nodo_quark->pos_y = pos_quarks[i][1] + temblor_y + orbita_y;
+            nodo_quark->escala = 25.0;
+            
+            //Rota rapido para simular temblor
+            nodo_quark->rot_z = t * 720.0 + i * 15.0;
+            
+            asigna_material_personaje(quark, mat_quark);
+            
+            agrega_hijo_jerarquia(nodo_fondo, nodo_quark);
+        }
+        
+        Personaje *mr_atomix = crea_mr_atomix();
+        
+        Personaje *torso = busca_parte_personaje(mr_atomix, "torso");
+
+        if(torso) 
+            asigna_material_personaje(torso, mat_traje);
+        
+        Personaje *cuello = busca_parte_personaje(mr_atomix, "cuello");
+
+        if(cuello) 
+            asigna_material_personaje(cuello, mat_traje);
+
+        Personaje *cabeza = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza) 
+            asigna_material_personaje(cabeza, mat_casco);
+        
+        Personaje *brazo_izq = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+
+        if(brazo_izq) 
+            asigna_material_personaje(brazo_izq, mat_traje);
+        
+        Personaje *brazo_der = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_der) 
+            asigna_material_personaje(brazo_der, mat_traje);
+        
+        Personaje *codo_izq = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+
+        if(codo_izq) 
+            asigna_material_personaje(codo_izq, mat_traje);
+        
+        Personaje *codo_der = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_der) 
+            asigna_material_personaje(codo_der, mat_traje);
+        
+        Personaje *mano_izq = busca_parte_personaje(mr_atomix, "mano_izquierda");
+
+        if(mano_izq) 
+            asigna_material_personaje(mano_izq, mat_guantes);
+        
+        Personaje *mano_der = busca_parte_personaje(mr_atomix, "mano_derecha");
+
+        if(mano_der) 
+            asigna_material_personaje(mano_der, mat_guantes);
+        
+        Personaje *pierna_izq = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+
+        if(pierna_izq) 
+            asigna_material_personaje(pierna_izq, mat_traje);
+        
+        Personaje *pierna_der = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_der) 
+            asigna_material_personaje(pierna_der, mat_traje);
+        
+        Personaje *rodilla_izq = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+
+        if(rodilla_izq) 
+            asigna_material_personaje(rodilla_izq, mat_traje);
+        
+        Personaje *rodilla_der = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_der) 
+            asigna_material_personaje(rodilla_der, mat_traje);
+        
+        Personaje *pie_izq = busca_parte_personaje(mr_atomix, "pie_izquierdo");
+
+        if(pie_izq) 
+            asigna_material_personaje(pie_izq, mat_guantes);
+        
+        Personaje *pie_der = busca_parte_personaje(mr_atomix, "pie_derecho");
+        
+        if(pie_der) 
+            asigna_material_personaje(pie_der, mat_guantes);
+        
+        //Dialogo
+        if(f < 330) 
+        {
+            char *dialogos5[] = 
+            {
+                "El limite! Estos",
+                "son los Quarks.",
+                "Son los ladrillos",
+                "del universo.",
+                "Mira su energia"
+            };
+            
+            Dialogo *dialogo_frame = crea_dialogo(5, dialogos5, audio_dialogo);
+            
+            if(dialogo_frame != NULL) 
+            {
+                muestra_dialogo(mr_atomix, dialogo_frame);
+                dialogo_frame->tiempo_mostrado = f * duracion_frame;
+                mr_atomix->dialogo = dialogo_frame;
+            }
+        }
+
+        else 
+            mr_atomix->dialogo = NULL;
+
+        NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(12000, 1, mr_atomix);
+        
+        //Movimiento flotante en el mundo cuantico
+        double movimiento_x = 200.0 + t * 500.0;
+        double movimiento_y = 400.0 + sin(t * PI * 4) * 60.0;
+        
+        nodo_atomix->pos_x = movimiento_x;
+        nodo_atomix->pos_y = movimiento_y;
+        nodo_atomix->escala = 14.0;
+        
+        //flota con simulacion sin gravedad
+        double ciclo_flotacion = sin(t * PI * 8) * 10.0;
+        
+        Personaje *brazo_izq_anim = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+        Personaje *brazo_der_anim = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_izq_anim) 
+            brazo_izq_anim->angulo_actual = ciclo_flotacion;
+
+        if(brazo_der_anim) 
+            brazo_der_anim->angulo_actual = -ciclo_flotacion;
+        
+        Personaje *pierna_izq_anim = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+        Personaje *pierna_der_anim = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_izq_anim) 
+            pierna_izq_anim->angulo_actual = -ciclo_flotacion * 0.5;
+
+        if(pierna_der_anim) 
+            pierna_der_anim->angulo_actual = ciclo_flotacion * 0.5;
+        
+        Personaje *cabeza_anim = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza_anim) 
+            cabeza_anim->angulo_actual = sin(t * PI * 5) * 6.0;
+        
+        agrega_hijo_jerarquia(nodo_fondo, nodo_atomix);
+
+        Luz *luz_principal_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_principal_frame = *luz_principal;
+        
+        Luz *luz_secundaria_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_secundaria_frame = *luz_secundaria;
+        
+        Luz *luz_quarks_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_quarks_frame = *luz_quarks;
+        
+        NodoJerarquia *nodo_luz1 = crea_nodo_jerarquia(13000, 3, luz_principal_frame);
+        NodoJerarquia *nodo_luz2 = crea_nodo_jerarquia(13001, 3, luz_secundaria_frame);
+        NodoJerarquia *nodo_luz3 = crea_nodo_jerarquia(13002, 3, luz_quarks_frame);
+        
+        nodo_luz1->pos_x = 800.0 + sin(t * PI) * 100.0;
+        nodo_luz1->pos_y = 600.0;
+        nodo_luz1->pos_z = 400.0;
+        
+        nodo_luz2->pos_x = 200.0;
+        nodo_luz2->pos_y = 300.0 + sin(t * PI * 2) * 50.0;
+        nodo_luz2->pos_z = 100.0;
+        
+        nodo_luz3->pos_x = 600.0 + cos(t * PI * 1.5) * 80.0;
+        nodo_luz3->pos_y = 400.0 + sin(t * PI * 1.5) * 60.0;
+        nodo_luz3->pos_z = 200.0;
+        
+        agrega_hijo_jerarquia(nodo_fondo, nodo_luz1);
+        agrega_hijo_jerarquia(nodo_fondo, nodo_luz2);
+        agrega_hijo_jerarquia(nodo_fondo, nodo_luz3);
+        
+        Frame *frame = crea_frame(f + 1, nodo_fondo, duracion_frame);
+        agrega_frame_escena(escena_animacion, frame);
+    }
+    
+    free(mat_fondo);
+    free(mat_quark);
+    free(mat_traje);
+    free(mat_casco);
+    free(mat_guantes);
+    free(luz_principal);
+    free(luz_secundaria);
+    free(luz_quarks);
+    
+    encola_escena(pelicula_global, escena_animacion);
+}
+
 int main(int argc, char** argv) 
 {
     glutInit(&argc, argv);
@@ -5402,13 +5687,15 @@ int main(int argc, char** argv)
 
     pelicula_global = crea_pelicula();
 
-    visualiza_escena1();
+    //visualiza_escena1();
 
-    visualiza_escena2();
+    //visualiza_escena2();
 
-    visualiza_escena3();
+    //visualiza_escena3();
 
-    visualiza_escena4();
+    //visualiza_escena4();
+
+    visualiza_escena5();
 
     escena_actual = pelicula_global->frente;
     
