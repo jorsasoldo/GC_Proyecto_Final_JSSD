@@ -300,8 +300,6 @@ Textura *carga_textura(char *ruta)
     
     glBindTexture(GL_TEXTURE_2D, 0);
     
-    printf("  -> Textura cargada exitosamente: %s (ID: %d, %dx%d)\n", ruta, tex->id_textura, tex->ancho, tex->alto);
-    
     //Almacena en cache para reutilizar y no tener que buscarla varias veces
     if(num_texturas < 100)
         texturas_cargadas[num_texturas++] = tex;
@@ -352,8 +350,6 @@ Textura *carga_textura_transparente(char *ruta)
     
     glBindTexture(GL_TEXTURE_2D, 0);
     
-    printf("  -> Textura transparente cargada: %s (ID: %d, %dx%d)\n", 
-           ruta, tex->id_textura, tex->ancho, tex->alto);
     
     //Almacena en cache para reutilizar y no tener que buscarla varias veces
     if(num_texturas < 100)
@@ -426,7 +422,6 @@ Audio *carga_audio(char *ruta)
     }
     
     audio->cargado = true;
-    printf("Audio cargado: %s (duracion: %.2f segundos)\n", ruta, audio->duracion);
     return audio;
 }
 
@@ -1780,7 +1775,6 @@ NodoRecurso *desencola_recurso(ColaRecursos *cola)
 
 void cargar_recursos(ColaRecursos *cola) 
 {
-    puts("Cargando recursos");
     
     NodoRecurso *actual = cola->frente;
     int recursos_cargados = 0;
@@ -1788,7 +1782,6 @@ void cargar_recursos(ColaRecursos *cola)
 
     while(actual != NULL) 
     {
-        printf("Procesando recurso: %s (tipo: %d)\n", actual->ruta, actual->tipo);
         
         if(actual->tipo == 0)
         {
@@ -1797,16 +1790,10 @@ void cargar_recursos(ColaRecursos *cola)
                 actual->dato_cargado = carga_textura_transparente(actual->ruta);
 
                 if(actual->dato_cargado != NULL) 
-                {
-                    printf("Textura transparente cargada: %s\n", actual->ruta);
                     recursos_cargados++;
-                }
 
                 else 
-                {
-                    printf("error al cargar textura transparente: %s\n", actual->ruta);
                     errores++;
-                }
             }
 
             else 
@@ -1814,15 +1801,10 @@ void cargar_recursos(ColaRecursos *cola)
                 actual->dato_cargado = carga_textura(actual->ruta);
 
                 if(actual->dato_cargado != NULL) 
-                {
-                    printf("Textura cargada: %s\n", actual->ruta);
                     recursos_cargados++;
-                }
+
                 else 
-                {
-                    printf("error al cargar textura: %s\n", actual->ruta);
                     errores++;
-                }
             }
         }
 
@@ -1830,21 +1812,13 @@ void cargar_recursos(ColaRecursos *cola)
         {
             actual->dato_cargado = carga_audio(actual->ruta);
             if(actual->dato_cargado != NULL) 
-            {
-                printf("Audio cargado: %s\n", actual->ruta);
                 recursos_cargados++;
-            }
             else 
-            {
-                printf("error al cargar audio: %s\n", actual->ruta);
                 errores++;
-            }
         }
         
         actual = actual->sig;
     }
-    
-    printf("Recursos cargados: %d correctos, %d errores", recursos_cargados, errores);
 }
 
 
@@ -6784,6 +6758,16 @@ void visualiza_escena8()
     encola_escena(pelicula_global, escena_animacion);
 }
 
+void limpia_pantalla()
+{
+    #ifdef _WIN32
+        system("cls");
+    //Checa si el usuario esta en otro sistema operativo y limpia la pantalla
+    #else
+        system("clear");
+    #endif
+}
+
 int main(int argc, char** argv) 
 {
     glutInit(&argc, argv);
@@ -6870,6 +6854,15 @@ int main(int argc, char** argv)
     
     //Timer global
     glutTimerFunc(33, actualiza, 0);
+
+    limpia_pantalla();
+
+    puts("============ CONTROLES =============");
+    puts("R = Regresar");
+    puts("P = PAUSAR/REANUDAR");
+    puts("C = Desactivar/Activar Camara");
+    puts("X = Reinicia Pelicula");
+    puts("====================================");
     
     glutMainLoop();
     
