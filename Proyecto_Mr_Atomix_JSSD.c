@@ -1396,12 +1396,9 @@ void renderiza_frame(Frame *frame)
     if(frame == NULL) 
         return;
     
-    // Primero, renderizamos usando la pila pero aplicando correctamente la jerarquía
-    // Creamos una pila temporal para procesar los nodos en orden correcto
     PilaRenderizado *pila_temp = crea_pila_renderizado();
     inserta_pila_renderizado(frame->arbol_jerarquia, pila_temp);
     
-    // Necesitamos una pila adicional para manejar las matrices GL
     NodoPilaRenderizado *actual = pila_temp->tope;
     
     while(actual != NULL) 
@@ -1412,23 +1409,21 @@ void renderiza_frame(Frame *frame)
         {
             glPushMatrix();
             
-            // Aplicar transformaciones locales del nodo
+            //Aplica transformaciones locales del nodo
             glTranslatef(nodo->pos_x, nodo->pos_y, nodo->pos_z);
             glRotatef(nodo->rot_z, 0.0, 0.0, 1.0);
             glScalef(nodo->escala, nodo->escala, nodo->escala);
             
-            // Aplicar material o luz si corresponde
+            //Aplicar material o luz si corresponde
             if(nodo->tipo == 2 && nodo->dato != NULL) 
-            {
                 aplica_material((Material*)nodo->dato);
-            }
+
             else if(nodo->tipo == 3 && nodo->dato != NULL) 
-            {
                 aplica_luz((Luz*)nodo->dato);
-            }
+
             else if(nodo->tipo == 1 && nodo->dato != NULL) 
             {
-                // Si es un personaje, aplicar su material si tiene
+                //Si es un personaj, aplicar su material si tiene
                 Personaje *personaje = (Personaje*)nodo->dato;
                 
                 if(personaje->material != NULL) 
@@ -1436,7 +1431,7 @@ void renderiza_frame(Frame *frame)
                     aplica_material(personaje->material);
                 }
                 
-                // Renderizar el personaje
+                //Renderiza el personaje
                 renderiza_personaje(personaje);
             }
             
@@ -1446,13 +1441,12 @@ void renderiza_frame(Frame *frame)
         actual = actual->sig;
     }
     
-    // Limpiar la pila temporal
     free_pila_renderizado(pila_temp);
     
-    // Reconstruir la pila original para futuros usos
     frame->pila_renderizado = crea_pila_renderizado();
     inserta_pila_renderizado(frame->arbol_jerarquia, frame->pila_renderizado);
 }
+
 void free_frame(Frame *frame) 
 {
     if(frame == NULL) 
