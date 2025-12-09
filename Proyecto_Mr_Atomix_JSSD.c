@@ -565,13 +565,6 @@ void muestra_dialogo(Personaje *personaje, Dialogo *dialogo)
     dialogo->activo = true;
     dialogo->tiempo_mostrado = 0.0;
     dialogo->audio_pausado = false;
-    
-    if(dialogo->audio != NULL && dialogo->audio->cargado) 
-    {
-        //Configura el audio para que se repita en loop mientras se esta mostrando el dialogo
-        set_audio_loop(dialogo->audio, true);
-        reproduce_audio(dialogo->audio);
-    }
 }
 
 void oculta_dialogo(Personaje *personaje) 
@@ -602,6 +595,16 @@ void actualiza_dialogo(Personaje *personaje, float tiempo)
         return;
     
     Dialogo *dialogo = personaje->dialogo;
+
+    if(dialogo->audio != NULL && dialogo->audio->cargado)
+    {
+        if(!dialogo->audio->reproduciendo && dialogo->tiempo_mostrado <= 0.1) 
+        {
+            set_audio_loop(dialogo->audio, true);
+            reproduce_audio(dialogo->audio);
+        }
+    }
+
     dialogo->tiempo_mostrado += tiempo;
 
     float tiempo_total_dialogo;
