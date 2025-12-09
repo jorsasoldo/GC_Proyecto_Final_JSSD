@@ -2689,6 +2689,12 @@ void encola_todas_las_texturas(ColaRecursos *cola)
     encola_recurso(cola, "Figuras/Texturas/celula.jpg", 0);
     encola_recurso(cola, "Figuras/Texturas/mitocondria.jpg", 0);
     encola_recurso(cola, "Figuras/Texturas/adn.jpg", 0);
+
+    //Escena 4
+    encola_recurso(cola, "Figuras/Texturas/atomo.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/neutron.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/proton.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/electron.jpg", 0);
 }
 
 Audio *busca_audio_en_cola(ColaRecursos *cola, char *ruta) 
@@ -4807,6 +4813,147 @@ void visualiza_escena3()
     free(luz_relleno);
     
     encola_escena(pelicula_global, escena_animacion);
+}
+
+Personaje *crea_electron() 
+{
+    double centro_x = 5.0;
+    double centro_y = 5.0;
+    
+    Punto *rot_electron = crea_punto(50, centro_x, centro_y, 0, 0, 0);
+    Personaje *electron = crea_personaje(20, "electron", rot_electron);
+    free(rot_electron);
+
+    int num_puntos_circulo = 20;
+    double radio_electron = 1.5;
+
+    electron->num_puntos = num_puntos_circulo;
+    electron->puntos_figura = (Punto*)malloc(num_puntos_circulo * sizeof(Punto));
+
+    for(int i = 0; i < num_puntos_circulo; i++) 
+    {
+        double angulo = 2.0 * PI * i / num_puntos_circulo;
+        electron->puntos_figura[i].id = 500 + i;
+        electron->puntos_figura[i].x = centro_x + radio_electron * cos(angulo);
+        electron->puntos_figura[i].y = centro_y + radio_electron * sin(angulo);
+        electron->puntos_figura[i].z = 0;
+        electron->puntos_figura[i].u = 0.5 + 0.5 * cos(angulo);
+        electron->puntos_figura[i].v = 0.5 + 0.5 * sin(angulo);
+    }
+    
+    convierte_absolutas_a_relativas_personaje(electron, 0.0, 0.0);
+    
+    //Asigna textura al electron
+    if(cola_recursos_global != NULL) 
+        electron->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/electron.jpg");
+    
+    return electron;
+}
+
+Personaje *crea_proton() 
+{
+    double centro_x = 5.0;
+    double centro_y = 5.0;
+    
+    Punto *rot_proton = crea_punto(50, centro_x, centro_y, 0, 0, 0);
+    Personaje *proton = crea_personaje(20, "proton", rot_proton);
+    free(rot_proton);
+
+    int num_puntos_circulo = 20;
+    double radio_proton = 1.5;
+
+    proton->num_puntos = num_puntos_circulo;
+    proton->puntos_figura = (Punto*)malloc(num_puntos_circulo * sizeof(Punto));
+
+    for(int i = 0; i < num_puntos_circulo; i++) 
+    {
+        double angulo = 2.0 * PI * i / num_puntos_circulo;
+        proton->puntos_figura[i].id = 500 + i;
+        proton->puntos_figura[i].x = centro_x + radio_proton * cos(angulo);
+        proton->puntos_figura[i].y = centro_y + radio_proton * sin(angulo);
+        proton->puntos_figura[i].z = 0;
+        proton->puntos_figura[i].u = 0.5 + 0.5 * cos(angulo);
+        proton->puntos_figura[i].v = 0.5 + 0.5 * sin(angulo);
+    }
+    
+    convierte_absolutas_a_relativas_personaje(proton, 0.0, 0.0);
+    
+    //Asigna textura al proton
+    if(cola_recursos_global != NULL) 
+        proton->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/proton.jpg");
+    
+    return proton;
+}
+
+Personaje *crea_neutron() 
+{
+    double centro_x = 5.0;
+    double centro_y = 5.0;
+    
+    Punto *rot_neutron = crea_punto(50, centro_x, centro_y, 0, 0, 0);
+    Personaje *neutron = crea_personaje(20, "neutron", rot_neutron);
+    free(rot_neutron);
+
+    int num_puntos_circulo = 20;
+    double radio_neutron = 1.5;
+
+    neutron->num_puntos = num_puntos_circulo;
+    neutron->puntos_figura = (Punto*)malloc(num_puntos_circulo * sizeof(Punto));
+
+    for(int i = 0; i < num_puntos_circulo; i++) 
+    {
+        double angulo = 2.0 * PI * i / num_puntos_circulo;
+        neutron->puntos_figura[i].id = 500 + i;
+        neutron->puntos_figura[i].x = centro_x + radio_neutron * cos(angulo);
+        neutron->puntos_figura[i].y = centro_y + radio_neutron * sin(angulo);
+        neutron->puntos_figura[i].z = 0;
+        neutron->puntos_figura[i].u = 0.5 + 0.5 * cos(angulo);
+        neutron->puntos_figura[i].v = 0.5 + 0.5 * sin(angulo);
+    }
+    
+    convierte_absolutas_a_relativas_personaje(neutron, 0.0, 0.0);
+    
+    //Asigna textura al proton
+    if(cola_recursos_global != NULL) 
+        neutron->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/neutron.jpg");
+    
+    return neutron;
+}
+
+Personaje *crea_atomo() 
+{
+    //Atomo es un rectangulo grande que cubre toda las escena
+    Punto *rot_atomo = crea_punto(900, 0.0, 0.0, 0, 0, 0);
+    Personaje *atomo = crea_personaje(3000, "atomo", rot_atomo);
+    free(rot_atomo);
+
+    Punto *pts_atomo[] = 
+    {
+        crea_punto(901, -1000.0, -500.0, 0, 0.0, 0.0),
+        crea_punto(902, 3000.0, -500.0, 0, 4.0, 0.0),
+        crea_punto(903, 3000.0, 1500.0, 0, 4.0, 2.0),
+        crea_punto(904, -1000.0, 1500.0, 0, 0.0, 2.0)
+    };
+    
+    atomo->num_puntos = 4;
+    atomo->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+    
+    for(int i = 0; i < 4; i++) 
+    {
+        atomo->puntos_figura[i] = *pts_atomo[i];
+        free(pts_atomo[i]);
+    }
+    
+    //Convierte coordenadas a relativas
+    convierte_absolutas_a_relativas_personaje(atomo, 0.0, 0.0);
+    
+    //Asigna textura al fondo
+    if(cola_recursos_global != NULL) 
+    {
+        atomo->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/atomo.jpg");
+    }
+    
+    return atomo;
 }
 
 int main(int argc, char** argv) 
