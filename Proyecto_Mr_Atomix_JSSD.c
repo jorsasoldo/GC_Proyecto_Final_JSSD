@@ -5687,13 +5687,13 @@ int main(int argc, char** argv)
 
     pelicula_global = crea_pelicula();
 
-    //visualiza_escena1();
+    visualiza_escena1();
 
-    //visualiza_escena2();
+    visualiza_escena2();
 
-    //visualiza_escena3();
+    visualiza_escena3();
 
-    //visualiza_escena4();
+    visualiza_escena4();
 
     visualiza_escena5();
 
