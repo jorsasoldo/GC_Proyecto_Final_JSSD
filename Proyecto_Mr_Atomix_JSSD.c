@@ -2704,6 +2704,10 @@ void encola_todas_las_texturas(ColaRecursos *cola)
     encola_recurso(cola, "Figuras/Texturas/tierra.jpg", 0);
     encola_recurso(cola, "Figuras/Texturas/luna.jpg", 0);
     encola_recurso(cola, "Figuras/Texturas/basura.jpg", 0);
+
+    //Escena 7
+    encola_recurso(cola, "Figuras/Texturas/asteroide.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/sol.jpg", 0);
 }
 
 Audio *busca_audio_en_cola(ColaRecursos *cola, char *ruta) 
@@ -6046,6 +6050,93 @@ void visualiza_escena6()
     free(luz_tierra);
     
     encola_escena(pelicula_global, escena_animacion);
+}
+
+Personaje *crea_asteroide()
+{
+    Punto *rot_asteroide = crea_punto(100, 11.0, 6.0, 0.0, 0.0, 0.0);
+
+    Personaje *asteroide = crea_personaje(18, "asteroide", rot_asteroide);
+    free(rot_asteroide);
+
+    Punto *pts_asteroide[] = 
+    {
+        crea_punto(1, 9.8, 7.56, 0.0, 0.08, 1.00),
+        crea_punto(2, 12.82, 7.26, 0.0, 0.74, 0.91),
+        crea_punto(3, 11.52, 6.16, 0.0, 0.46, 0.60),
+        crea_punto(4, 14.0, 5.0, 0.0, 1.00, 0.27),
+        crea_punto(5, 12.54, 4.74, 0.0, 0.68, 0.19),
+        crea_punto(6, 11.3, 4.06, 0.0, 0.41, 0.00),
+        crea_punto(7, 10.42, 5.34, 0.0, 0.22, 0.37),
+        crea_punto(8, 9.42, 5.7, 0.0, 0.00, 0.47),
+        crea_punto(9, 10.1, 6.58, 0.0, 0.15, 0.72)
+    };
+
+    int num_puntos = 9;
+
+    asteroide->num_puntos = num_puntos;
+    asteroide->puntos_figura = (Punto*)malloc(num_puntos * sizeof(Punto));
+
+    if (asteroide->puntos_figura == NULL) 
+    {
+        free_personaje(asteroide);
+
+        for(int i = 0; i < num_puntos; i++) 
+            free_punto(pts_asteroide[i]);
+
+        return NULL;
+    }
+
+    for (int i = 0; i < num_puntos; i++)
+        asteroide->puntos_figura[i] = *pts_asteroide[i];
+
+    for(int i = 0; i < num_puntos; i++) 
+        free_punto(pts_asteroide[i]);
+
+    convierte_absolutas_a_relativas_personaje(asteroide, 0.0, 0.0);
+
+    if(cola_recursos_global != NULL)
+    {
+        asteroide->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/asteroide.jpg");
+    }
+
+    return asteroide;
+}
+
+Personaje *crea_vista_sol() 
+{
+    //vista del sol es un rectangulo grande que cubre toda las escena
+    Punto *rot_fondo = crea_punto(900, 0.0, 0.0, 0, 0, 0);
+    Personaje *fondo = crea_personaje(3000, "vista_sol", rot_fondo);
+    free(rot_fondo);
+
+    Punto *pts_fondo[] = 
+    {
+        crea_punto(901, -1000.0, -500.0, 0, 0.0, 0.0),
+        crea_punto(902, 3000.0, -500.0, 0, 4.0, 0.0),
+        crea_punto(903, 3000.0, 1500.0, 0, 4.0, 2.0),
+        crea_punto(904, -1000.0, 1500.0, 0, 0.0, 2.0)
+    };
+    
+    fondo->num_puntos = 4;
+    fondo->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+    
+    for(int i = 0; i < 4; i++) 
+    {
+        fondo->puntos_figura[i] = *pts_fondo[i];
+        free(pts_fondo[i]);
+    }
+    
+    //Convierte coordenadas a relativas
+    convierte_absolutas_a_relativas_personaje(fondo, 0.0, 0.0);
+    
+    //Asigna textura al fondo
+    if(cola_recursos_global != NULL) 
+    {
+        fondo->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/sol.jpg");
+    }
+    
+    return fondo;
 }
 
 int main(int argc, char** argv) 
