@@ -1,0 +1,62 @@
+Tira central (raíz)
+
+Punto 1 = (7.199145855194124, 8.027532004197273)
+Punto 2 = (6.808109589041096, 7.677041095890411)
+Punto 3 = (8.39064399770247, 6.22159586444572)
+Punto 4 = (8.84727863751285, 6.448090462034285)
+
+Punto 5 = (7.868733751428628, 7.020998037361379) <---- punto de rotacion
+
+Tira arriba izq (hija de tira central)
+
+Punto 6 = (8.26, 9.88)
+Punto 7 = (8.74, 9.76)
+Punto 8 = (9.32, 5.56)
+Punto 9 = (8.90, 6.14)
+
+Punto 10 = (8.871011092575511, 7.502309400946359) <---- punto de rotacion
+
+Tira arriba der (hija de tira central)
+
+Punto 11 = (10.24, 8.68)
+Punto 12 = (10.66, 8.42)
+Punto 13 = (6.78, 7.98)
+Punto 14 = (6.32, 8.32)
+
+Punto 15 = (7.844458686577263, 8.313285801684973) <---- punto de rotacion
+
+Tira arriba (hija de tira arriba izq y tira arriba der)
+
+Punto 16 = (8.784329274071357, 9.438994911897069)
+Punto 17 = (8.816157894147715, 9.208511800999306)
+Punto 18 = (9.737412900836663, 8.633844041913571)
+Punto 19 = (9.966648059341688, 8.654896250347706)
+
+Punto 20 = (9.278101364199436, 8.967463826839639) <----- punto de rotacion
+
+Tira abajo izq (hija de tira central)
+
+Punto 13 = (6.78, 7.98)
+Punto 14 = (6.32, 8.32)
+Punto 21 = (6.68, 4.10)
+Punto 22 = (7.14, 4.10)
+
+Punto 23 = (6.626398327451962, 6.848344593681047) <------ punto de rotacion
+
+Tira abajo der (hija de tira central)
+
+Punto 8 = (9.32, 5.56)
+Punto 9 = (8.90, 6.14)
+Punto 24 = (4.78, 6.80)
+Punto 25 = (4.68, 6.24)
+
+Punto 26 = (7.13805957016464, 6.10739405601556) <----- punto de rotacion
+
+Tira abajo (hija de tira abajo der y tira abajo izq)
+
+Punto 27 = (5.170620136220766, 6.16809877314006)
+Punto 28 = (5.490050213757195, 6.121285744535584)
+Punto 29 = (6.609172646073675, 4.93025398213637)
+Punto 30 = (6.641541227319923, 4.5508222797497915)
+
+Punto 31 = (5.882918427597552, 5.542534743967562) <---- punto de rotacion
