@@ -5632,6 +5632,56 @@ void visualiza_escena5()
     encola_escena(pelicula_global, escena_animacion);
 }
 
+Personaje *crea_basura()
+{
+    Punto *rot_basura = crea_punto(100, 11.0, 6.0, 0.0, 0.0, 0.0);
+
+    Personaje *basura = crea_personaje(18, "basura_principal", rot_basura);
+    free(rot_basura);
+
+    Punto *pts_basura[] = 
+    {
+        crea_punto(1, 9.8, 7.56, 0.0, 0.08, 1.00),
+        crea_punto(2, 12.82, 7.26, 0.0, 0.74, 0.91),
+        crea_punto(3, 11.52, 6.16, 0.0, 0.46, 0.60),
+        crea_punto(4, 14.0, 5.0, 0.0, 1.00, 0.27),
+        crea_punto(5, 12.54, 4.74, 0.0, 0.68, 0.19),
+        crea_punto(6, 11.3, 4.06, 0.0, 0.41, 0.00),
+        crea_punto(7, 10.42, 5.34, 0.0, 0.22, 0.37),
+        crea_punto(8, 9.42, 5.7, 0.0, 0.00, 0.47),
+        crea_punto(9, 10.1, 6.58, 0.0, 0.15, 0.72)
+    };
+
+    int num_puntos = 9;
+
+    basura->num_puntos = num_puntos;
+    basura->puntos_figura = (Punto*)malloc(num_puntos * sizeof(Punto));
+
+    if (basura->puntos_figura == NULL) 
+    {
+        free_personaje(basura);
+
+        for(int i = 0; i < num_puntos; i++) 
+            free_punto(pts_basura[i]);
+
+        return NULL;
+    }
+
+    for (int i = 0; i < num_puntos; i++)
+        basura->puntos_figura[i] = *pts_basura[i];
+
+    for(int i = 0; i < num_puntos; i++) free_punto(pts_basura[i]);
+
+    convierte_absolutas_a_relativas_personaje(basura, 0.0, 0.0);
+    
+    if(cola_recursos_global != NULL)
+    {
+        basura->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/basura.jpg");
+    }
+
+    return basura;
+}
+
 int main(int argc, char** argv) 
 {
     glutInit(&argc, argv);
