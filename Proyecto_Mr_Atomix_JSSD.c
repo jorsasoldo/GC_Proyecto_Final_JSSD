@@ -2708,6 +2708,9 @@ void encola_todas_las_texturas(ColaRecursos *cola)
     //Escena 7
     encola_recurso(cola, "Figuras/Texturas/asteroide.jpg", 0);
     encola_recurso(cola, "Figuras/Texturas/sol.jpg", 0);
+
+    //Escena 8
+    encola_recurso(cola, "Figuras/Texturas/galaxia.jpg", 0);
 }
 
 Audio *busca_audio_en_cola(ColaRecursos *cola, char *ruta) 
@@ -6431,6 +6434,42 @@ void visualiza_escena7()
     free(luz_resplandor);
     
     encola_escena(pelicula_global, escena_animacion);
+}
+
+Personaje *crea_vista_galaxia() 
+{
+    //vista de galaxia es un rectangulo grande que cubre toda las escena
+    Punto *rot_fondo = crea_punto(900, 0.0, 0.0, 0, 0, 0);
+    Personaje *fondo = crea_personaje(3000, "vista_galaxia", rot_fondo);
+    free(rot_fondo);
+
+    Punto *pts_fondo[] = 
+    {
+        crea_punto(30001, -4000.0, -3000.0, 0, 0.0, 0.0),
+        crea_punto(30002, 6000.0, -3000.0, 0, 12.0, 0.0),
+        crea_punto(30003, 6000.0, 4000.0, 0, 12.0, 7.0),
+        crea_punto(30004, -4000.0, 4000.0, 0, 0.0, 7.0)
+    };
+    
+    fondo->num_puntos = 4;
+    fondo->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+    
+    for(int i = 0; i < 4; i++) 
+    {
+        fondo->puntos_figura[i] = *pts_fondo[i];
+        free(pts_fondo[i]);
+    }
+    
+    //Convierte coordenadas a relativas
+    convierte_absolutas_a_relativas_personaje(fondo, 0.0, 0.0);
+    
+    //Asigna textura al fondo
+    if(cola_recursos_global != NULL) 
+    {
+        fondo->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/galaxia.jpg");
+    }
+    
+    return fondo;
 }
 
 int main(int argc, char** argv) 
