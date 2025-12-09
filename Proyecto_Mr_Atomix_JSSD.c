@@ -4948,7 +4948,7 @@ Personaje *crea_atomo()
 
 void visualiza_escena4() 
 {
-    Escena *escena_animacion = crea_escena(4, "Dentro del Átomo");
+    Escena *escena_animacion = crea_escena(4, "Dentro del Atomo");
 
     Audio *audio_dialogo = busca_audio_en_cola(cola_recursos_global, "Audio/dialogo.mp3");
     
@@ -6311,7 +6311,7 @@ void visualiza_escena7()
                 "Que calor! Ese es el Sol.",
                 "Es tan grande que cabrian",
                 "un millon de Tierras",
-                "dentro de él."
+                "dentro de el."
             };
             
             Dialogo *dialogo_frame = crea_dialogo(4, dialogos7, audio_dialogo);
@@ -6758,6 +6758,376 @@ void visualiza_escena8()
     encola_escena(pelicula_global, escena_animacion);
 }
 
+void visualiza_escena9() 
+{
+    Escena *escena_animacion = crea_escena(9, "Parque Final");
+
+    Audio *audio_dialogo = busca_audio_en_cola(cola_recursos_global, "Audio/dialogo.mp3");
+    
+    if(audio_dialogo == NULL) 
+    {
+        puts("No se puedo cargar el audio");
+    }
+
+    //Dia soleado
+    //Material para el fondo (cielo)
+    float amb_cielo[4] = {0.3, 0.4, 0.8, 1.0};
+    float diff_cielo[4] = {0.5, 0.6, 1.0, 1.0};
+    float spec_cielo[4] = {0.1, 0.1, 0.2, 1.0};
+    Material *mat_cielo = crea_material(amb_cielo, diff_cielo, spec_cielo, 1.0);
+    
+    //Material para el pasto
+    float amb_pasto[4] = {0.1, 0.3, 0.1, 1.0};
+    float diff_pasto[4] = {0.2, 0.6, 0.2, 1.0};
+    float spec_pasto[4] = {0.05, 0.1, 0.05, 1.0};
+    Material *mat_pasto = crea_material(amb_pasto, diff_pasto, spec_pasto, 5.0);
+    
+    //Material para el tronco del pino
+    float amb_tronco[4] = {0.3, 0.2, 0.1, 1.0};
+    float diff_tronco[4] = {0.5, 0.35, 0.2, 1.0};
+    float spec_tronco[4] = {0.1, 0.08, 0.05, 1.0};
+    Material *mat_tronco = crea_material(amb_tronco, diff_tronco, spec_tronco, 10.0);
+    
+    //Material para las hojas del pino
+    float amb_hojas[4] = {0.1, 0.25, 0.1, 1.0};
+    float diff_hojas[4] = {0.2, 0.5, 0.2, 1.0};
+    float spec_hojas[4] = {0.05, 0.1, 0.05, 1.0};
+    Material *mat_hojas = crea_material(amb_hojas, diff_hojas, spec_hojas, 15.0);
+    
+    //Material para el balon
+    float amb_balon[4] = {0.3, 0.3, 0.3, 1.0};
+    float diff_balon[4] = {0.7, 0.7, 0.7, 1.0};
+    float spec_balon[4] = {0.8, 0.8, 0.8, 1.0};
+    Material *mat_balon = crea_material(amb_balon, diff_balon, spec_balon, 60.0);
+    
+    //Material para Mr. Atomix
+    float amb_traje[4] = {0.2, 0.15, 0.1, 1.0};
+    float diff_traje[4] = {0.5, 0.4, 0.3, 1.0};
+    float spec_traje[4] = {0.2, 0.18, 0.15, 1.0};
+    Material *mat_traje = crea_material(amb_traje, diff_traje, spec_traje, 20.0);
+    
+    //Material para el caso de Mr. Atomix
+    float amb_casco[4] = {0.25, 0.25, 0.3, 1.0};
+    float diff_casco[4] = {0.6, 0.6, 0.7, 1.0};
+    float spec_casco[4] = {0.9, 0.9, 0.9, 1.0};
+    Material *mat_casco = crea_material(amb_casco, diff_casco, spec_casco, 80.0);
+    
+    //Material para los guantes y zapatos de Mr Atomix
+    float amb_guantes[4] = {0.15, 0.15, 0.15, 1.0};
+    float diff_guantes[4] = {0.4, 0.4, 0.4, 1.0};
+    float spec_guantes[4] = {0.3, 0.3, 0.3, 1.0};
+    Material *mat_guantes = crea_material(amb_guantes, diff_guantes, spec_guantes, 30.0);
+    
+    //luz del sol (luz principal direccional)
+    float pos_sol[4] = {500.0, 1000.0, 500.0, 0.0};
+    float amb_sol[4] = {0.4, 0.4, 0.4, 1.0};
+    float diff_sol[4] = {0.9, 0.9, 0.8, 1.0};
+    float spec_sol[4] = {0.8, 0.8, 0.7, 1.0};
+    Luz *luz_sol = crea_luz(0, pos_sol, amb_sol, diff_sol, spec_sol);
+    
+    //luz de relleno (luz del cielo)
+    float pos_cielo[4] = {0.0, 500.0, 0.0, 1.0};
+    float amb_cielo_luz[4] = {0.3, 0.3, 0.4, 1.0};
+    float diff_cielo_luz[4] = {0.3, 0.3, 0.5, 1.0};
+    float spec_cielo_luz[4] = {0.1, 0.1, 0.2, 1.0};
+    Luz *luz_cielo = crea_luz(1, pos_cielo, amb_cielo_luz, diff_cielo_luz, spec_cielo_luz);
+    
+    //10 segundos a 30fps son aprox 300 frames
+    //Cada frame dura 1/30 asi que mas o meenos son 0.0333 segundos
+    int num_frames = 300;
+    double duracion_frame = 1.0 / 30.0;
+    
+    for(int f = 0; f < num_frames; f++) 
+    {
+        double t = (double)f / (num_frames - 1);
+
+        //Fondo (Cielo)
+        Personaje *fondo = crea_fondo();
+        NodoJerarquia *nodo_fondo = crea_nodo_jerarquia(3000, 1, fondo);
+        nodo_fondo->pos_x = 0.0;
+        nodo_fondo->pos_y = 0.0;
+        nodo_fondo->escala = 1.0;
+        asigna_material_personaje(fondo, mat_cielo);
+        
+        //Piso (Pasto)
+        Personaje *piso = crea_piso();
+        NodoJerarquia *nodo_piso = crea_nodo_jerarquia(100, 1, piso);
+        nodo_piso->pos_x = -400.0;
+        nodo_piso->pos_y = 0.0;
+        nodo_piso->escala = 1.0;
+        asigna_material_personaje(piso, mat_pasto);
+        agrega_hijo_jerarquia(nodo_fondo, nodo_piso);
+        
+        //Pino a la derecha
+        Personaje *pino = crea_pino();
+        NodoJerarquia *nodo_pino = crea_nodo_jerarquia(16, 1, pino);
+        nodo_pino->pos_x = 800.0;
+        nodo_pino->pos_y = 145.0;
+        nodo_pino->escala = 40.0;
+        
+        //Asigna materiales a las partes del pino
+        Personaje *tronco_pino = busca_parte_personaje(pino, "tronco_pino");
+
+        if(tronco_pino) 
+            asigna_material_personaje(tronco_pino, mat_tronco);
+        
+        //Asigna material de las hojas a todas las hojas
+        Personaje *partes_hojas[] = 
+        {
+            busca_parte_personaje(pino, "hoja1_pino"),
+            busca_parte_personaje(pino, "hoja2_pino"),
+            busca_parte_personaje(pino, "hoja3_pino"),
+            busca_parte_personaje(pino, "hoja4_pino"),
+            busca_parte_personaje(pino, "copa_pino")
+        };
+        
+        for(int i = 0; i < 5; i++) 
+        {
+            if(partes_hojas[i]) 
+                asigna_material_personaje(partes_hojas[i], mat_hojas);
+        }
+        
+        agrega_hijo_jerarquia(nodo_piso, nodo_pino);
+        
+        //Pino a la izquierda
+        Personaje *pino2 = clona_personaje(pino);
+        NodoJerarquia *nodo_pino2 = crea_nodo_jerarquia(17, 1, pino2);
+        nodo_pino2->pos_x = -300.0;
+        nodo_pino2->pos_y = 145.0;
+        nodo_pino2->escala = 40.0;
+        agrega_hijo_jerarquia(nodo_piso, nodo_pino2);
+        
+        //Balon
+        Personaje *balon = crea_balon();
+        NodoJerarquia *nodo_balon = crea_nodo_jerarquia(20, 1, balon);
+        asigna_material_personaje(balon, mat_balon);
+        
+        //Movimiento de rebote mas o menos sinusoidal
+        double altura_rebote = fabs(sin(t * PI * 4)) * 50.0; ////Hace 4 rebotes
+
+
+        nodo_balon->pos_x = 200.0 + t * 400.0; //Se mueve de izquierda a derecha
+        nodo_balon->pos_y = 145.0 + altura_rebote;
+        nodo_balon->escala = 28.0;
+        nodo_balon->rot_z = t * 720.0; //Hace 2 rotaciones completas
+        agrega_hijo_jerarquia(nodo_piso, nodo_balon);
+        
+        //Mr. Atomix
+        Personaje *mr_atomix = crea_mr_atomix();
+        
+        //Asigna materiales a las partes de Mr. Atomix
+        Personaje *torso = busca_parte_personaje(mr_atomix, "torso");
+
+        if(torso) 
+            asigna_material_personaje(torso, mat_traje);
+        
+        Personaje *cuello = busca_parte_personaje(mr_atomix, "cuello");
+
+        if(cuello) 
+            asigna_material_personaje(cuello, mat_traje);
+
+        Personaje *cabeza = busca_parte_personaje(mr_atomix, "cabeza");
+        
+        if(cabeza) 
+            asigna_material_personaje(cabeza, mat_casco);
+        
+        Personaje *brazo_izq = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+
+        if(brazo_izq) 
+            asigna_material_personaje(brazo_izq, mat_traje);
+        
+        Personaje *brazo_der = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_der) 
+            asigna_material_personaje(brazo_der, mat_traje);
+        
+        Personaje *codo_izq = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+
+        if(codo_izq) 
+            asigna_material_personaje(codo_izq, mat_traje);
+        
+        Personaje *codo_der = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_der)
+            asigna_material_personaje(codo_der, mat_traje);
+        
+        Personaje *mano_izq = busca_parte_personaje(mr_atomix, "mano_izquierda");
+
+        if(mano_izq) 
+            asigna_material_personaje(mano_izq, mat_guantes);
+        
+        Personaje *mano_der = busca_parte_personaje(mr_atomix, "mano_derecha");
+
+        if(mano_der) 
+            asigna_material_personaje(mano_der, mat_guantes);
+        
+        Personaje *pierna_izq = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+
+        if(pierna_izq) 
+            asigna_material_personaje(pierna_izq, mat_traje);
+        
+        Personaje *pierna_der = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_der) 
+            asigna_material_personaje(pierna_der, mat_traje);
+        
+        Personaje *rodilla_izq = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+
+        if(rodilla_izq) 
+            asigna_material_personaje(rodilla_izq, mat_traje);
+        
+        Personaje *rodilla_der = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_der) 
+            asigna_material_personaje(rodilla_der, mat_traje);
+        
+        Personaje *pie_izq = busca_parte_personaje(mr_atomix, "pie_izquierdo");
+
+        if(pie_izq) 
+            asigna_material_personaje(pie_izq, mat_guantes);
+        
+        Personaje 
+            *pie_der = busca_parte_personaje(mr_atomix, "pie_derecho");
+
+        if(pie_der) 
+            asigna_material_personaje(pie_der, mat_guantes);
+        
+        if(f < 240) 
+        {
+            char *dialogos9[] = 
+            {
+                "Ya seas un pequeno quark",
+                "o una galaxia gigante", 
+                "todos somos importantes!", 
+                "Hasta la proxima", 
+                "exploradores!"
+            };
+        
+            Dialogo *dialogo_frame = crea_dialogo(5, dialogos9, audio_dialogo);
+
+            if(dialogo_frame != NULL) 
+                muestra_dialogo(mr_atomix, dialogo_frame);
+            
+            for(int i = 0; i < 4; i++) 
+            {
+                strcpy(dialogo_frame->lineas[i], dialogos9[i]);
+                dialogo_frame->total_caracteres += strlen(dialogos9[i]);
+            }
+            
+            dialogo_frame->audio = audio_dialogo;
+            dialogo_frame->activo = true;
+            
+            dialogo_frame->tiempo_mostrado = f * duracion_frame;
+            
+            mr_atomix->dialogo = dialogo_frame;
+        } 
+
+        else 
+            mr_atomix->dialogo = NULL;
+
+        NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(1, 1, mr_atomix);
+        
+        //Movimiento horizontal de Mr. Atomix (camina de izquierda a derecha)
+        nodo_atomix->pos_x = 200.0 + t * 800.0;
+        nodo_atomix->pos_y = 145.0;
+        nodo_atomix->escala = 28.0;
+        
+        //Ciclo de caminar (8 ciclos completos en 10 segundos)
+        double ciclo_caminar = sin(t * PI * 16) * 15.0; //Oscilacion de brazos y pierna
+        
+        //Anima brazos
+        Personaje *brazo_izq_anim = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+        Personaje *brazo_der_anim = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_izq_anim) 
+            brazo_izq_anim->angulo_actual = ciclo_caminar;
+
+        if(brazo_der_anim) 
+            brazo_der_anim->angulo_actual = -ciclo_caminar;
+        
+        //Anima piernas (hace lo opuesto a los brazos)
+        Personaje *pierna_izq_anim = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+        Personaje *pierna_der_anim = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_izq_anim) 
+            pierna_izq_anim->angulo_actual = -ciclo_caminar * 0.8;
+
+        if(pierna_der_anim) 
+            pierna_der_anim->angulo_actual = ciclo_caminar * 0.8;
+        
+        //Anima codos
+        Personaje *codo_izq_anim = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+        Personaje *codo_der_anim = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_izq_anim) 
+            codo_izq_anim->angulo_actual = fabs(ciclo_caminar) * 0.5;
+
+        if(codo_der_anim) 
+            codo_der_anim->angulo_actual = fabs(ciclo_caminar) * 0.5;
+        
+        //Anima rodillas
+        Personaje *rodilla_izq_anim = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+        Personaje *rodilla_der_anim = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_izq_anim) 
+            rodilla_izq_anim->angulo_actual = fabs(ciclo_caminar) * 0.6;
+
+        if(rodilla_der_anim) 
+            rodilla_der_anim->angulo_actual = fabs(ciclo_caminar) * 0.6;
+        
+        //movimiento de cabeza
+        Personaje *cabeza_anim = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza_anim) 
+            cabeza_anim->angulo_actual = sin(t * PI * 8) * 5.0;
+        
+        agrega_hijo_jerarquia(nodo_piso, nodo_atomix);
+        
+        //Agrega luces a la jerarquia de los frame
+        //Clona las luces para este frame
+        Luz *luz_sol_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_sol_frame = *luz_sol;
+        
+        Luz *luz_cielo_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_cielo_frame = *luz_cielo;
+        
+        //Crea nodos para las luces
+        NodoJerarquia *nodo_luz_sol = crea_nodo_jerarquia(5000, 3, luz_sol_frame);
+        NodoJerarquia *nodo_luz_cielo = crea_nodo_jerarquia(5001, 3, luz_cielo_frame);
+        
+        //Posiciona luces
+        nodo_luz_sol->pos_x = 500.0 + sin(t * PI) * 200.0;
+        nodo_luz_sol->pos_y = 1000.0;
+        nodo_luz_sol->pos_z = 500.0;
+        
+        nodo_luz_cielo->pos_x = 0.0;
+        nodo_luz_cielo->pos_y = 500.0;
+        nodo_luz_cielo->pos_z = 0.0;
+        
+        //Agrega luces al fondo
+        agrega_hijo_jerarquia(nodo_fondo, nodo_luz_sol);
+        agrega_hijo_jerarquia(nodo_fondo, nodo_luz_cielo);
+        
+        //Cre frame con duracion de 1/30 segundo
+        Frame *frame = crea_frame(f + 1, nodo_fondo, duracion_frame);
+        agrega_frame_escena(escena_animacion, frame);
+    }
+    
+    //Liberar materiales
+    free(mat_cielo);
+    free(mat_pasto);
+    free(mat_tronco);
+    free(mat_hojas);
+    free(mat_balon);
+    free(mat_traje);
+    free(mat_casco);
+    free(mat_guantes);
+    free(luz_sol);
+    free(luz_cielo);
+    
+    encola_escena(pelicula_global, escena_animacion);
+}
+
 void limpia_pantalla()
 {
     #ifdef _WIN32
@@ -6838,6 +7208,8 @@ int main(int argc, char** argv)
     visualiza_escena7();
 
     visualiza_escena8();
+
+    visualiza_escena9();
 
     escena_actual = pelicula_global->frente;
     
