@@ -97,7 +97,7 @@ typedef struct PilaFrames
 
 typedef struct Textura 
 {
-    GLuint id_textura;
+    int id_textura;
     char nombre[100];
     int ancho;
     int alto;
@@ -106,10 +106,12 @@ typedef struct Textura
 typedef struct Audio 
 {
     ma_decoder decoder; //Decodificador de miniaudio
+    ma_sound sound;
     char nombre[100];
     float duracion;
     bool cargado;
     bool reproduciendo;
+    bool loop;
 }Audio;
 
 typedef struct Dialogo 
@@ -394,8 +396,10 @@ Audio *carga_audio(char *ruta)
     strcpy(audio->nombre, ruta);
     audio->cargado = false;
     audio->reproduciendo = false;
+    audio->loop = false;
     audio->duracion = 0.0;
     
+    //Primero se inicializam el decoder para obtener la duracion
     ma_result resultado = ma_decoder_init_file(ruta, NULL, &audio->decoder);
     
     if(resultado != MA_SUCCESS) 
@@ -408,8 +412,20 @@ Audio *carga_audio(char *ruta)
     ma_uint64 frames_totales;
     ma_decoder_get_length_in_pcm_frames(&audio->decoder, &frames_totales);
     audio->duracion = (float)frames_totales / audio->decoder.outputSampleRate;
+
+    //Se inicializa el sonido para la reproduccion
+    resultado = ma_sound_init_from_file(&motor_audio, ruta, 0, NULL, NULL, &audio->sound);
+
+    if(resultado != MA_SUCCESS) 
+    {
+        printf("Error al inicializar sonido para: %s\n", ruta);
+        ma_decoder_uninit(&audio->decoder);
+        free(audio);
+        return NULL;
+    }
     
     audio->cargado = true;
+    printf("Audio cargado: %s (duracion: %.2f segundos)\n", ruta, audio->duracion);
     return audio;
 }
 
@@ -417,19 +433,40 @@ void reproduce_audio(Audio *audio)
 {
     if(audio == NULL || !audio->cargado || !audio_inicializado) 
         return;
+
+    //Si ya se esta reproduciendo se lo detiene y vuelve a comenzar
+    if(audio->reproduciendo) 
+        ma_sound_stop(&audio->sound);
     
     ma_decoder_seek_to_pcm_frame(&audio->decoder, 0);
-    ma_engine_play_sound(&motor_audio, audio->nombre, NULL);
+
+    //Configura loop si se ocupa
+    if(audio->loop) 
+        ma_sound_set_looping(&audio->sound, MA_TRUE);
+    else 
+        ma_sound_set_looping(&audio->sound, MA_FALSE);
+
+    ma_result resultado = ma_sound_start(&audio->sound);
+    
+    if(resultado != MA_SUCCESS) 
+    {
+        printf("Error al reproducir audio: %s\n", audio->nombre);
+        return;
+    }
     
     audio->reproduciendo = true;
 }
 
 void detiene_audio(Audio *audio) 
 {
-    if(audio == NULL) 
+    if(audio == NULL || !audio->cargado) 
         return;
 
-    audio->reproduciendo = false;
+    if(audio->reproduciendo) 
+    {
+        ma_sound_stop(&audio->sound);
+        audio->reproduciendo = false;
+    }
 }
 
 void free_audio(Audio *audio) 
@@ -437,8 +474,14 @@ void free_audio(Audio *audio)
     if(audio == NULL) 
         return;
 
+    
     if(audio->cargado) 
     {
+        if(audio->reproduciendo) 
+            ma_sound_stop(&audio->sound);
+
+        ma_sound_uninit(&audio->sound);
+
         ma_decoder_uninit(&audio->decoder);
     }
 
@@ -451,6 +494,7 @@ void cierra_audio()
     {
         ma_engine_uninit(&motor_audio);
         audio_inicializado = false;
+        puts("audio cerrado");
     }
 }
 
@@ -460,6 +504,23 @@ void ajusta_volumen_global(float volumen)
         return;
 
     ma_engine_set_volume(&motor_audio, volumen);
+}
+
+void ajusta_volumen_audio(Audio *audio, float volumen) 
+{
+    if(audio == NULL || audio->cargado == false) 
+        return;
+    
+    ma_sound_set_volume(&audio->sound, volumen);
+}
+
+void set_audio_loop(Audio *audio, bool loop) 
+{
+    if(audio == NULL || !audio->cargado) 
+        return;
+    
+    audio->loop = loop;
+    ma_sound_set_looping(&audio->sound, loop ? MA_TRUE : MA_FALSE);
 }
 
 Dialogo *crea_dialogo(int n, char *textos[], Audio *audio) 
@@ -499,11 +560,15 @@ void muestra_dialogo(Personaje *personaje, Dialogo *dialogo)
     }
     
     personaje->dialogo = dialogo;
-    dialogo->activo = 1;
+    dialogo->activo = true;
     dialogo->tiempo_mostrado = 0.0;
     
     if(dialogo->audio != NULL && dialogo->audio->cargado) 
+    {
+        //Configura el audio para que se repita en loop mientras se esta mostrando el dialogo
+        set_audio_loop(dialogo->audio, true);
         reproduce_audio(dialogo->audio);
+    }
 }
 
 void oculta_dialogo(Personaje *personaje) 
@@ -512,8 +577,13 @@ void oculta_dialogo(Personaje *personaje)
         return;
     
     if(personaje->dialogo->audio != NULL)
+    {
         detiene_audio(personaje->dialogo->audio);
-    
+
+        //Desactiva loop
+        set_audio_loop(personaje->dialogo->audio, false);
+    }
+
     personaje->dialogo->activo = false;
     personaje->dialogo = NULL;
 }
@@ -528,19 +598,17 @@ void actualiza_dialogo(Personaje *personaje, float tiempo)
     
     Dialogo *dialogo = personaje->dialogo;
     dialogo->tiempo_mostrado += tiempo;
-    
-    if(dialogo->audio != NULL) 
-    {
-        if(dialogo->tiempo_mostrado >= dialogo->audio->duracion + 0.5)
-            oculta_dialogo(personaje);
 
-    } 
+    float tiempo_total_dialogo;
     
+    if(dialogo->audio != NULL && dialogo->audio->cargado) 
+        tiempo_total_dialogo = dialogo->audio->duracion + 1.0;
+
     else 
-    {
-        if(dialogo->tiempo_mostrado >= 15.0)
-            oculta_dialogo(personaje);
-    }
+        tiempo_total_dialogo = 7.0;
+    
+    if(dialogo->tiempo_mostrado >= tiempo_total_dialogo)
+        oculta_dialogo(personaje);
 }
 
 void dibuja_texto(char *texto, float x, float y) 
@@ -1973,6 +2041,10 @@ void retroceder()
         
         Escena *escena_anterior = escena_actual;
         Frame *frame_anterior = frame_actual;
+
+        //Guarda el estado actual antes de retroceder
+        Frame *frame_actual_guardado = frame_actual;
+        Escena *escena_actual_guardada = escena_actual;
         
         //Retrocede 2s o hasta que se acabe la pila
         while(pila_deshacer->tope != NULL && frames_retrocedidos < frames_retroceder) 
@@ -1986,25 +2058,82 @@ void retroceder()
             frame_actual = frame_anterior;
             escena_actual = escena_anterior;
             tiempo_acumulado = 0.0;
+            
+            //Deteiene cualquier audio actual antes de retroceder
+            if(frame_actual_guardado != NULL && frame_actual_guardado->arbol_jerarquia != NULL)
+            {
+                NodoJerarquia *nodo_atomix_actual = busca_mr_atomix_en_arbol(frame_actual_guardado->arbol_jerarquia);
+
+                if(nodo_atomix_actual != NULL)
+                {
+                    Personaje *atomix_actual = (Personaje*)nodo_atomix_actual->dato;
+
+                    if(atomix_actual->dialogo != NULL && atomix_actual->dialogo->audio != NULL)
+                        detiene_audio(atomix_actual->dialogo->audio);
+                }
+            }
+            
+            //Reactiva el dialogo en el frame al que se retrocedio
+            if(frame_actual != NULL && frame_actual->arbol_jerarquia != NULL)
+            {
+                NodoJerarquia *nodo_atomix = busca_mr_atomix_en_arbol(frame_actual->arbol_jerarquia);
+
+                if(nodo_atomix != NULL)
+                {
+                    Personaje *atomix = (Personaje*)nodo_atomix->dato;
+                    if(atomix->dialogo != NULL)
+                    {
+                        //Reinicia el tiempo del dialogo
+                        atomix->dialogo->tiempo_mostrado = 0.0f;
+                        atomix->dialogo->activo = true;
+                        
+                        //Reproduce el audio desde el principio
+                        if(atomix->dialogo->audio != NULL && atomix->dialogo->audio->cargado)
+                        {
+                            //Configura para loop mientras se muestra
+                            set_audio_loop(atomix->dialogo->audio, true);
+                            reproduce_audio(atomix->dialogo->audio);
+                        }
+                    }
+                }
+            }
+            
+            printf("Retrocedido %d frames\n", frames_retrocedidos);
         }
     }
-
     else 
+    {
         puts("No hay frames anteriores para retroceder");
+    }
+
 }
 
 void reinicia_pelicula() 
 {
     if(pelicula_global == NULL) 
     {
-        puts("Error: No existe una peliculaa");
+        puts("Error: No existe una pelicula");
         return;
     }
 
+    //Detiene cualquier audio en reproduccion
+    if(frame_actual != NULL && frame_actual->arbol_jerarquia != NULL)
+    {
+        NodoJerarquia *nodo_atomix = busca_mr_atomix_en_arbol(frame_actual->arbol_jerarquia);
+
+        if(nodo_atomix != NULL)
+        {
+            Personaje *atomix = (Personaje*)nodo_atomix->dato;
+
+            if(atomix->dialogo != NULL && atomix->dialogo->audio != NULL)
+            {
+                detiene_audio(atomix->dialogo->audio);
+            }
+        }
+    }
+    
     int frames_guardados = cuenta_frames_pila(pila_deshacer);
-    
     free_pila_frames(pila_deshacer);
-    
     pila_deshacer = crea_pila_frames();
     
     printf("Frames limpiados del historial: %d\n", frames_guardados);
@@ -2021,9 +2150,30 @@ void reinicia_pelicula()
         
         puts("Pelicula reiniciada desde el inicio");
         
-        if(frame_actual != NULL)
-            printf("Frame actual: %d\n", frame_actual->id_frame);
+        //Reinicia dialogo si el frame inicial lo tiene
+        if(frame_actual != NULL && frame_actual->arbol_jerarquia != NULL)
+        {
+            NodoJerarquia *nodo_atomix = busca_mr_atomix_en_arbol(frame_actual->arbol_jerarquia);
+
+            if(nodo_atomix != NULL)
+            {
+                Personaje *atomix = (Personaje*)nodo_atomix->dato;
+
+                if(atomix->dialogo != NULL)
+                {
+                    atomix->dialogo->tiempo_mostrado = 0.0f;
+                    atomix->dialogo->activo = true;
+                    
+                    if(atomix->dialogo->audio != NULL && atomix->dialogo->audio->cargado)
+                    {
+                        set_audio_loop(atomix->dialogo->audio, true);
+                        reproduce_audio(atomix->dialogo->audio);
+                    }
+                }
+            }
+        }
     } 
+
     else 
     {
         puts("Advertencia: No hay escenas en la pelicula");
@@ -2453,6 +2603,21 @@ void encola_todas_las_texturas(ColaRecursos *cola)
     encola_recurso(cola, "Figuras/Texturas/balon.jpg", 0);
     encola_recurso(cola, "Figuras/Texturas/tronco.jpg", 0);
     encola_recurso(cola, "Figuras/Texturas/hoja.jpg", 0);
+
+    encola_recurso(cola, "Audio/dialogo.mp3", 2);
+}
+
+Audio *busca_audio_en_cola(ColaRecursos *cola, char *ruta) 
+{
+    NodoRecurso *nodo = busca_recurso(cola, ruta);
+    
+    if(nodo == NULL || nodo->dato_cargado == NULL) 
+    {
+        printf("Error: Audio no encontrado en cola: %s\n", ruta);
+        return NULL;
+    }
+    
+    return (Audio*)nodo->dato_cargado;
 }
 
 Personaje *crea_mr_atomix() 
@@ -3171,7 +3336,14 @@ Personaje *crea_fondo()
 void visualiza_escena1() 
 {
     Escena *escena_animacion = crea_escena(1, "Parque");
-  
+
+    Audio *audio_dialogo = busca_audio_en_cola(cola_recursos_global, "Audio/dialogo.mp3");
+    
+    if(audio_dialogo == NULL) 
+    {
+        puts("No se puedo cargar el audio");
+    }
+
     //Dia soleado
     //Material para el fondo (cielo)
     float amb_cielo[4] = {0.3, 0.4, 0.8, 1.0};
@@ -3405,10 +3577,10 @@ void visualiza_escena1()
                 "nuestro universo. Vamos abajo!"
             };
             
-            Dialogo *dialogo_frame = (Dialogo*)malloc(sizeof(Dialogo));
-            
-            dialogo_frame->num_lineas = 4;
-            dialogo_frame->total_caracteres = 0;
+            Dialogo *dialogo_frame = crea_dialogo(4, dialogos1, audio_dialogo);
+
+            if(dialogo_frame != NULL) 
+                muestra_dialogo(mr_atomix, dialogo_frame);
             
             for(int i = 0; i < 4; i++) 
             {
@@ -3416,7 +3588,7 @@ void visualiza_escena1()
                 dialogo_frame->total_caracteres += strlen(dialogos1[i]);
             }
             
-            dialogo_frame->audio = NULL;
+            dialogo_frame->audio = audio_dialogo;
             dialogo_frame->activo = true;
             
             dialogo_frame->tiempo_mostrado = f * duracion_frame;
@@ -3553,6 +3725,14 @@ int main(int argc, char** argv)
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+    
+    if(!inicializa_audio()) 
+    {
+        puts("Error al inicializar audio");
+        return 1;
+    }
+    
+    ajusta_volumen_global(10);
 
     cola_recursos_global = crea_cola_recursos();
 
@@ -3574,14 +3754,6 @@ int main(int argc, char** argv)
     glutMouseFunc(mouse_controles);
     glutMotionFunc(motion_controles);
     glutPassiveMotionFunc(motion_controles);
-
-    if(!inicializa_audio()) 
-    {
-        puts("Error al inicializar audio");
-        return 1;
-    }
-    
-    ajusta_volumen_global(0.7);
 
     pelicula_global = crea_pelicula();
 
