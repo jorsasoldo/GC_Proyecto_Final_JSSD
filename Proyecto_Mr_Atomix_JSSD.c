@@ -4523,6 +4523,292 @@ Personaje *crea_mitocondria()
     return mitocondria;
 }
 
+void visualiza_escena3() 
+{
+    Escena *escena_animacion = crea_escena(3, "Dentro de la Celula");
+
+    Audio *audio_dialogo = busca_audio_en_cola(cola_recursos_global, "Audio/dialogo.mp3");
+    
+    if(audio_dialogo == NULL) 
+    {
+        puts("No se pudo cargar el audio");
+    }
+
+    float amb_celula[4] = {0.2, 0.2, 0.4, 1.0};
+    float diff_celula[4] = {0.3, 0.3, 0.8, 1.0};
+    float spec_celula[4] = {0.1, 0.1, 0.3, 1.0};
+    Material *mat_celula = crea_material(amb_celula, diff_celula, spec_celula, 5.0);
+    
+    float amb_adn[4] = {0.1, 0.1, 0.6, 1.0};
+    float diff_adn[4] = {0.2, 0.2, 1.0, 1.0};
+    float spec_adn[4] = {0.8, 0.8, 1.0, 1.0};
+    Material *mat_adn = crea_material(amb_adn, diff_adn, spec_adn, 80.0);
+    
+    float amb_mitocondria[4] = {0.1, 0.4, 0.1, 1.0};
+    float diff_mitocondria[4] = {0.2, 0.8, 0.2, 1.0};
+    float spec_mitocondria[4] = {0.5, 1.0, 0.5, 1.0};
+    Material *mat_mitocondria = crea_material(amb_mitocondria, diff_mitocondria, spec_mitocondria, 60.0);
+    
+    float amb_traje[4] = {0.2, 0.15, 0.1, 1.0};
+    float diff_traje[4] = {0.5, 0.4, 0.3, 1.0};
+    float spec_traje[4] = {0.2, 0.18, 0.15, 1.0};
+    Material *mat_traje = crea_material(amb_traje, diff_traje, spec_traje, 20.0);
+    
+    float amb_casco[4] = {0.25, 0.25, 0.3, 1.0};
+    float diff_casco[4] = {0.6, 0.6, 0.7, 1.0};
+    float spec_casco[4] = {0.9, 0.9, 0.9, 1.0};
+    Material *mat_casco = crea_material(amb_casco, diff_casco, spec_casco, 80.0);
+    
+    float amb_guantes[4] = {0.15, 0.15, 0.15, 1.0};
+    float diff_guantes[4] = {0.4, 0.4, 0.4, 1.0};
+    float spec_guantes[4] = {0.3, 0.3, 0.3, 1.0};
+    Material *mat_guantes = crea_material(amb_guantes, diff_guantes, spec_guantes, 30.0);
+    
+    float pos_luz_principal[4] = {400.0, 600.0, 300.0, 0.0};
+    float amb_luz_principal[4] = {0.3, 0.3, 0.5, 1.0};
+    float diff_luz_principal[4] = {0.7, 0.7, 1.0, 1.0};
+    float spec_luz_principal[4] = {0.8, 0.8, 1.0, 1.0};
+    Luz *luz_principal = crea_luz(0, pos_luz_principal, amb_luz_principal, diff_luz_principal, spec_luz_principal);
+    
+    float pos_luz_relleno[4] = {800.0, 200.0, 100.0, 1.0};
+    float amb_luz_relleno[4] = {0.2, 0.2, 0.3, 1.0};
+    float diff_luz_relleno[4] = {0.4, 0.4, 0.6, 1.0};
+    float spec_luz_relleno[4] = {0.3, 0.3, 0.5, 1.0};
+    Luz *luz_relleno = crea_luz(1, pos_luz_relleno, amb_luz_relleno, diff_luz_relleno, spec_luz_relleno);
+    
+    int num_frames = 450;
+    double duracion_frame = 1.0 / 30.0;
+    
+    double pos_adn[10][2] = 
+    {
+        {100.0, 200.0}, {300.0, 400.0}, {500.0, 100.0}, {700.0, 300.0}, {900.0, 200.0},
+        {200.0, 500.0}, {400.0, 100.0}, {600.0, 400.0}, {800.0, 100.0}, {1000.0, 300.0}
+    };
+    
+    double pos_mitocondria[10][2] = 
+    {
+        {150.0, 350.0}, {350.0, 150.0}, {550.0, 450.0}, {750.0, 250.0}, {950.0, 350.0},
+        {250.0, 100.0}, {450.0, 300.0}, {650.0, 200.0}, {850.0, 400.0}, {1050.0, 150.0}
+    };
+    
+    for(int f = 0; f < num_frames; f++) 
+    {
+        double t = (double)f / (num_frames - 1);
+
+        Personaje *celula = crea_celula();
+        NodoJerarquia *nodo_celula = crea_nodo_jerarquia(5000, 1, celula);
+        nodo_celula->pos_x = 0.0;
+        nodo_celula->pos_y = 0.0;
+        nodo_celula->escala = 1.0;
+        asigna_material_personaje(celula, mat_celula);
+        
+        for(int i = 0; i < 10; i++) 
+        {
+            Personaje *adn = crea_adn();
+            NodoJerarquia *nodo_adn = crea_nodo_jerarquia(6000 + i, 1, adn);
+            
+            //Movimiento sinusoidal
+            double offset_x = sin(t * PI * 2 + i * PI / 5) * 40.0;
+            double offset_y = cos(t * PI * 2.5 + i * PI / 4) * 30.0;
+            nodo_adn->pos_x = pos_adn[i][0] + offset_x;
+            nodo_adn->pos_y = pos_adn[i][1] + offset_y;
+            nodo_adn->escala = 40.0;
+            nodo_adn->rot_z = t * 360.0 + i * 36.0; //Rotacion continua
+            
+            asigna_material_personaje(adn, mat_adn);
+            agrega_hijo_jerarquia(nodo_celula, nodo_adn);
+        }
+        
+        for(int i = 0; i < 10; i++) 
+        {
+            Personaje *mitocondria = crea_mitocondria();
+            NodoJerarquia *nodo_mitocondria = crea_nodo_jerarquia(7000 + i, 1, mitocondria);
+            
+            //Movimiento sinusoidal diferente
+            double offset_x = cos(t * PI * 3 + i * PI / 3) * 50.0;
+            double offset_y = sin(t * PI * 2.2 + i * PI / 2) * 40.0;
+            nodo_mitocondria->pos_x = pos_mitocondria[i][0] + offset_x;
+            nodo_mitocondria->pos_y = pos_mitocondria[i][1] + offset_y;
+            nodo_mitocondria->escala = 30.0;
+            nodo_mitocondria->rot_z = t * 180.0 + i * 45.0;
+            
+            asigna_material_personaje(mitocondria, mat_mitocondria);
+            agrega_hijo_jerarquia(nodo_celula, nodo_mitocondria);
+        }
+
+        Personaje *mr_atomix = crea_mr_atomix();
+        
+        Personaje *torso = busca_parte_personaje(mr_atomix, "torso");
+
+        if(torso) 
+            asigna_material_personaje(torso, mat_traje);
+        
+        Personaje *cuello = busca_parte_personaje(mr_atomix, "cuello");
+
+        if(cuello)
+            asigna_material_personaje(cuello, mat_traje);
+
+        Personaje *cabeza = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza) 
+            asigna_material_personaje(cabeza, mat_casco);
+        
+        Personaje *brazo_izq = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+
+        if(brazo_izq) 
+            asigna_material_personaje(brazo_izq, mat_traje);
+        
+        Personaje *brazo_der = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_der) 
+            asigna_material_personaje(brazo_der, mat_traje);
+        
+        Personaje *codo_izq = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+
+        if(codo_izq) 
+            asigna_material_personaje(codo_izq, mat_traje);
+        
+        Personaje *codo_der = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_der) 
+            asigna_material_personaje(codo_der, mat_traje);
+        
+        Personaje *mano_izq = busca_parte_personaje(mr_atomix, "mano_izquierda");
+
+        if(mano_izq) 
+            asigna_material_personaje(mano_izq, mat_guantes);
+        
+        Personaje *mano_der = busca_parte_personaje(mr_atomix, "mano_derecha");
+
+        if(mano_der) 
+            asigna_material_personaje(mano_der, mat_guantes);
+        
+        Personaje *pierna_izq = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+
+        if(pierna_izq) 
+            asigna_material_personaje(pierna_izq, mat_traje);
+        
+        Personaje *pierna_der = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_der) 
+            asigna_material_personaje(pierna_der, mat_traje);
+        
+        Personaje *rodilla_izq = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+
+        if(rodilla_izq) 
+            asigna_material_personaje(rodilla_izq, mat_traje);
+        
+        Personaje *rodilla_der = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_der) 
+            asigna_material_personaje(rodilla_der, mat_traje);
+        
+        Personaje *pie_izq = busca_parte_personaje(mr_atomix, "pie_izquierdo");
+
+        if(pie_izq) 
+            asigna_material_personaje(pie_izq, mat_guantes);
+        
+        Personaje *pie_der = busca_parte_personaje(mr_atomix, "pie_derecho");
+
+        if(pie_der) 
+            asigna_material_personaje(pie_der, mat_guantes);
+        
+        if(f < 330)
+        {
+            char *dialogos3[] = 
+            {
+                "Mas pequeno! Esto es",
+                "el ADN. Es como un libro",
+                "de instrucciones que dice",
+                "como eres tu. Parece una",
+                "escalera de caracol!"
+            };
+            
+            Dialogo *dialogo_frame = crea_dialogo(5, dialogos3, audio_dialogo);
+            
+            if(dialogo_frame != NULL) 
+            {
+                muestra_dialogo(mr_atomix, dialogo_frame);
+                dialogo_frame->tiempo_mostrado = f * duracion_frame;
+                mr_atomix->dialogo = dialogo_frame;
+            }
+        }
+
+        else 
+            mr_atomix->dialogo = NULL;
+
+        NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(8000, 1, mr_atomix);
+        
+        double movimiento_x = t * 600.0; //Se mueve horizontalmente
+        double movimiento_y = sin(t * PI * 4) * 50.0; //Movimiento ondulante vertical
+        
+        nodo_atomix->pos_x = 100.0 + movimiento_x;
+        nodo_atomix->pos_y = 300.0 + movimiento_y;
+        nodo_atomix->escala = 14.0; //Escala pequeña
+        
+        double ciclo_flotacion = sin(t * PI * 8) * 10.0;
+        
+        Personaje *brazo_izq_anim = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+        Personaje *brazo_der_anim = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_izq_anim) 
+            brazo_izq_anim->angulo_actual = ciclo_flotacion;
+
+        if(brazo_der_anim) 
+            brazo_der_anim->angulo_actual = -ciclo_flotacion;
+        
+        Personaje *pierna_izq_anim = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+        Personaje *pierna_der_anim = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_izq_anim) 
+            pierna_izq_anim->angulo_actual = -ciclo_flotacion * 0.5;
+
+        if(pierna_der_anim) 
+            pierna_der_anim->angulo_actual = ciclo_flotacion * 0.5;
+        
+        Personaje *cabeza_anim = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza_anim) 
+            cabeza_anim->angulo_actual = sin(t * PI * 6) * 5.0;
+        
+        agrega_hijo_jerarquia(nodo_celula, nodo_atomix);
+        
+        Luz *luz_principal_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_principal_frame = *luz_principal;
+        
+        Luz *luz_relleno_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_relleno_frame = *luz_relleno;
+        
+        NodoJerarquia *nodo_luz1 = crea_nodo_jerarquia(9000, 3, luz_principal_frame);
+        NodoJerarquia *nodo_luz2 = crea_nodo_jerarquia(9001, 3, luz_relleno_frame);
+        
+        nodo_luz1->pos_x = 400.0 + sin(t * PI) * 100.0;
+        nodo_luz1->pos_y = 600.0;
+        nodo_luz1->pos_z = 300.0;
+        
+        nodo_luz2->pos_x = 800.0;
+        nodo_luz2->pos_y = 200.0;
+        nodo_luz2->pos_z = 100.0;
+        
+        agrega_hijo_jerarquia(nodo_celula, nodo_luz1);
+        agrega_hijo_jerarquia(nodo_celula, nodo_luz2);
+        
+        Frame *frame = crea_frame(f + 1, nodo_celula, duracion_frame);
+        agrega_frame_escena(escena_animacion, frame);
+    }
+    
+    free(mat_celula);
+    free(mat_adn);
+    free(mat_mitocondria);
+    free(mat_traje);
+    free(mat_casco);
+    free(mat_guantes);
+    free(luz_principal);
+    free(luz_relleno);
+    
+    encola_escena(pelicula_global, escena_animacion);
+}
+
 int main(int argc, char** argv) 
 {
     glutInit(&argc, argv);
@@ -4581,6 +4867,8 @@ int main(int argc, char** argv)
     visualiza_escena1();
 
     visualiza_escena2();
+
+    visualiza_escena3();
 
     escena_actual = pelicula_global->frente;
     
