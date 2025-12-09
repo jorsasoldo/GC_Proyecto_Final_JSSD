@@ -226,8 +226,8 @@ PilaFrames *pila_deshacer = NULL;
 bool en_pausa = false;
 int ventana_principal;
 int ventana_controles;
-Boton botones[4];
-int num_botones = 4;
+Boton botones[5];
+int num_botones = 5;
 
 ColaRecursos *cola_recursos_global = NULL;
 
@@ -624,7 +624,7 @@ void dibuja_texto(char *texto, float x, float y)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, texto[i]);
 }
 
-void dibuja_burbuja_dialogo(Personaje *personaje) 
+void dibuja_burbuja_dialogo(Personaje *personaje, float escala_personaje) 
 {
     if(personaje == NULL || personaje->dialogo == NULL) 
         return;
@@ -639,26 +639,25 @@ void dibuja_burbuja_dialogo(Personaje *personaje)
     int caracteres_a_mostrar = 0;
 
     if(dialogo->tiempo_mostrado >= tiempo_total_escritura) 
-    {
-        //Ya paso el tiempo muestra todo
         caracteres_a_mostrar = dialogo->total_caracteres;
-    } 
 
-    else 
+    else
     {
-        //Calcula cuantos caracteres mostrar basado en el tiempo usando regla de 3
         float porcentaje = dialogo->tiempo_mostrado / tiempo_total_escritura;
         caracteres_a_mostrar = (int)(porcentaje * dialogo->total_caracteres);
-    }
+    } 
     
     if(caracteres_a_mostrar <= 0)
         return;
     
     glPushMatrix(); 
     
-    //Posicionarla burbuja sobre el personaje
-    glTranslatef(15.0, 23.5, 0);
-
+    //Factor de ajuste basado en la escala
+    float factor_ajuste = escala_personaje / 28.0;
+    
+    glTranslatef(10.0, 24.0, 0);
+    
+    //Tamaño de la burbuja
     float ancho = 15.0;
     float alto_linea = 1.2;
     float alto = 2.0 + (dialogo->num_lineas * alto_linea);
@@ -735,7 +734,6 @@ void dibuja_burbuja_dialogo(Personaje *personaje)
                 glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, dialogo->lineas[i][j]);
                 contador_global++;
             } 
-
             else 
             {
                 glPopMatrix();
@@ -752,7 +750,8 @@ void dibuja_burbuja_dialogo(Personaje *personaje)
     glLineWidth(1.0);
 }
 
-void renderiza_dialogos_jerarquia(NodoJerarquia *nodo) {
+void renderiza_dialogos_jerarquia(NodoJerarquia *nodo) 
+{
     if(nodo == NULL || !nodo->activo)
         return;
 
@@ -765,13 +764,15 @@ void renderiza_dialogos_jerarquia(NodoJerarquia *nodo) {
     if(nodo->tipo == 1 && nodo->dato != NULL) 
     {
         Personaje *personaje = (Personaje*)nodo->dato;
+
         if(personaje->dialogo != NULL && personaje->dialogo->activo) 
         {
-            dibuja_burbuja_dialogo(personaje);
+            dibuja_burbuja_dialogo(personaje, nodo->escala);
         }
     }
     
     NodoJerarquia *hijo = nodo->hijo;
+
     while(hijo != NULL) 
     {
         renderiza_dialogos_jerarquia(hijo);
@@ -1915,8 +1916,8 @@ NodoJerarquia *busca_mr_atomix_en_arbol(NodoJerarquia *nodo)
     if(nodo == NULL || !nodo->activo) 
         return NULL;
     
-    //Verifica si el nodo contiene a Mr Atomix (id_jerarquia = 1)
-    if(nodo->id_jerarquia == 1 && nodo->tipo == 1) 
+    //Si el nodo es un personaje verificar si su nombre es torso
+    if(nodo->tipo == 1 && nodo->dato != NULL) 
     {
         Personaje *p = (Personaje*)nodo->dato;
         if(p != NULL && strcmp(p->nombre, "torso") == 0) 
@@ -1924,7 +1925,6 @@ NodoJerarquia *busca_mr_atomix_en_arbol(NodoJerarquia *nodo)
     }
     
     NodoJerarquia *hijo = nodo->hijo;
-
     while(hijo != NULL) 
     {
         NodoJerarquia *resultado = busca_mr_atomix_en_arbol(hijo);
@@ -1936,7 +1936,7 @@ NodoJerarquia *busca_mr_atomix_en_arbol(NodoJerarquia *nodo)
     return NULL;
 }
 
-//Calcular la posicion objetivo de la camara basandose en mr atomix
+//Calcula la posicion objetivo de la camara basandose en mr atomix
 void actualiza_objetivo_camara(Frame *frame) 
 {
     if(frame == NULL || frame->arbol_jerarquia == NULL || !camara_sigue_personaje) 
@@ -1957,31 +1957,30 @@ void actualiza_objetivo_camara(Frame *frame)
         //Posiciona la camara en el centro vertical del personaje
         camara_global.objetivo_y = nodo_atomix->pos_y + (altura_personaje * 0.4);
         
-        //Ajusta zoom en base en la escala del personaje
-        //si el personaje es grande hace zoom out
-        //si es mas pequeño hace zoom in
-        if(escala_personaje > 35.0) 
+        if(escala_personaje > 0) 
         {
-            //Personaje muy grande se aleja
-            camara_global.objetivo_zoom = 0.7 / (escala_personaje / 28.0);
-        } 
-        else if(escala_personaje < 20.0) 
-        {
-            //Personaje muy pequeño se acerca
-            camara_global.objetivo_zoom = 1.5 * (28.0 / escala_personaje);
-        } 
-        else 
-        {
-            //Tamaño normal
-            camara_global.objetivo_zoom = 1.0;
+
+            camara_global.objetivo_zoom = 1.0 / sqrt(escala_personaje / 28.0);
+
+            if(escala_personaje < 15.0) 
+            {
+                //Para escalas muy pequeña, limitas el zoom maximo
+                camara_global.objetivo_zoom = fmin(camara_global.objetivo_zoom, 1.8);
+            }
+
+            else if(escala_personaje > 40.0) 
+            {
+                //Para escalas muy grandes,limita el zoom minimo
+                camara_global.objetivo_zoom = fmax(camara_global.objetivo_zoom, 0.5);
+            }
         }
         
-        //Limita el zoom para evitar valores extremos
-        if(camara_global.objetivo_zoom < 0.3) 
-            camara_global.objetivo_zoom = 0.3;
+        // Limita el zoom para evitar valores extremos
+        if(camara_global.objetivo_zoom < 0.4) 
+            camara_global.objetivo_zoom = 0.4;
 
-        if(camara_global.objetivo_zoom > 2.5) 
-            camara_global.objetivo_zoom = 2.5;
+        if(camara_global.objetivo_zoom > 1.8) 
+            camara_global.objetivo_zoom = 1.8;
     }
 }
 
@@ -2018,6 +2017,16 @@ void aplica_camara()
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+}
+
+void alterna_seguimiento_camara()
+{
+    camara_sigue_personaje = !camara_sigue_personaje;
+
+    printf("Seguimiento de camara: %s\n", camara_sigue_personaje ? "ACTIVADO" : "DESACTIVADO");
+    
+    glutSetWindow(ventana_controles);
+    glutPostRedisplay();
 }
 
 void pausa()
@@ -2269,15 +2278,24 @@ void inicializa_botones()
     strcpy(botones[2].texto, "Reiniciar");
     botones[2].accion = reinicia_pelicula;
     botones[2].hover = false;
-    
-    //boton para salir
+
+    //boton para seguimiento de camara
     botones[3].x = x_inicio + (ancho_boton + espacio) * 3;
     botones[3].y = y_pos;
     botones[3].ancho = ancho_boton;
     botones[3].alto = alto_boton;
-    strcpy(botones[3].texto, "Salir");
-    botones[3].accion = salir;
+    strcpy(botones[3].texto, camara_sigue_personaje ? "Camara ON" : "Camara OFF");
+    botones[3].accion = alterna_seguimiento_camara;
     botones[3].hover = false;
+    
+    //boton para salir
+    botones[4].x = x_inicio + (ancho_boton + espacio) * 4;
+    botones[4].y = y_pos;
+    botones[4].ancho = ancho_boton;
+    botones[4].alto = alto_boton;
+    strcpy(botones[4].texto, "Salir");
+    botones[4].accion = salir;
+    botones[4].hover = false;
 }
 
 void dibuja_boton(Boton *btn) 
@@ -2347,6 +2365,8 @@ void display_controles()
     
     //Actualiza el texto del boton de pausa
     strcpy(botones[0].texto, en_pausa ? "Reanudar" : "Pausa");
+
+    strcpy(botones[3].texto, camara_sigue_personaje ? "Camara ON" : "Camara OFF");
     
     //Dibuja todos los botones
     for(int i = 0; i < num_botones; i++)
@@ -2354,7 +2374,7 @@ void display_controles()
     
     //Cantidad de frames
     glColor3f(0.8, 0.8, 0.8);
-    glRasterPos2f(450, 70);
+    glRasterPos2f(550, 70);
     char info[100];
 
     sprintf(info, "Frames: %d", cuenta_frames_pila(pila_deshacer));
@@ -2365,7 +2385,7 @@ void display_controles()
     //Escena
     if(escena_actual != NULL) 
     {
-        glRasterPos2f(450, 50);
+        glRasterPos2f(550, 50);
         sprintf(info, "Escena: %s", escena_actual->nombre);
 
         for(int i = 0; info[i] != '\0'; i++)
@@ -2373,7 +2393,7 @@ void display_controles()
     }
     
     //Estado de ela pelicula
-    glRasterPos2f(450, 30);
+    glRasterPos2f(550, 30);
     sprintf(info, "Estado: %s", en_pausa ? "PAUSADO" : "REPRODUCIENDOSE");
 
     for(int i = 0; info[i] != '\0'; i++)
@@ -2652,7 +2672,14 @@ void encola_todas_las_texturas(ColaRecursos *cola)
     encola_recurso(cola, "Figuras/Texturas/tronco.jpg", 0);
     encola_recurso(cola, "Figuras/Texturas/hoja.jpg", 0);
 
+    //Audio dialogo
     encola_recurso(cola, "Audio/dialogo.mp3", 2);
+
+    //Escena 2
+    encola_recurso(cola, "Figuras/Texturas/vena.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/globulo_blanco.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/globulo_rojo.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/plaqueta.jpg", 0);
 }
 
 Audio *busca_audio_en_cola(ColaRecursos *cola, char *ruta) 
@@ -3750,6 +3777,565 @@ void visualiza_escena1()
     encola_escena(pelicula_global, escena_animacion);
 }
 
+Personaje *crea_plaqueta() 
+{
+
+    Punto *pts_plaqueta[] = 
+    {
+        crea_punto(1, 5.7254, 4.6486, 0, 0.7283, 0.9531), 
+        crea_punto(2, 5.4, 4.74, 0, 0.5042, 1.0000),
+        crea_punto(3, 5.74, 4.2, 0, 0.7386, 0.7231),
+        crea_punto(4, 5.06, 3.82, 0, 0.2703, 0.5283),
+        crea_punto(5, 4.6672, 4.4065, 0, 0.0000, 0.8290),
+        crea_punto(6, 4.7925, 3.7574, 0, 0.0862, 0.5050),
+        crea_punto(7, 4.7811, 3.2904, 0, 0.0784, 0.2569),
+        crea_punto(8, 5.2253, 3.4840, 0, 0.3839, 0.3561),
+        crea_punto(9, 5.6694, 3.7915, 0, 0.6908, 0.5138),
+        crea_punto(10, 6.12, 3.5, 0, 1.0000, 0.3643),
+        crea_punto(11, 6.0453, 2.7893, 0, 0.9481, 0.0000)
+    };
+    
+    int num_puntos = 11;
+    
+    Punto *rot_plaqueta = crea_punto(50, 5.4, 3.8, 0, 0, 0); 
+    
+    Personaje *plaqueta = crea_personaje(1000, "plaqueta", rot_plaqueta); 
+    free(rot_plaqueta); 
+    
+    if(plaqueta == NULL) 
+    {
+        for(int i = 0; i < num_puntos; i++) free_punto(pts_plaqueta[i]);
+        return NULL;
+    }
+
+    plaqueta->num_puntos = num_puntos;
+    plaqueta->puntos_figura = (Punto*)malloc(num_puntos * sizeof(Punto));
+    
+    if(plaqueta->puntos_figura == NULL) 
+    {
+        for(int i = 0; i < num_puntos; i++) free_punto(pts_plaqueta[i]);
+        free_personaje(plaqueta); 
+        return NULL;
+    }
+
+    for(int i = 0; i < num_puntos; i++) 
+    {
+        plaqueta->puntos_figura[i] = *pts_plaqueta[i];
+        free_punto(pts_plaqueta[i]); 
+    }
+
+    if(cola_recursos_global != NULL)
+        plaqueta->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/plaqueta.jpg");
+
+    return plaqueta;
+}
+
+Personaje *crea_globulo_rojo()
+{
+    int num_puntos = 20;
+    Punto *pts_globulo[20];
+    double angle;
+    double center_x = 3.72;
+    double center_y = 4.6;
+    double center_z = 0;
+
+    Punto *rot_globulo = crea_punto(1, center_x, center_y, center_z, 0, 0); 
+
+    Personaje *globulo = crea_personaje(2000, "globulo_rojo", rot_globulo); 
+    free(rot_globulo); 
+    
+    if(globulo == NULL) 
+    {
+        return NULL;
+    }
+
+    for (int i = 0; i < 20; i++)
+    {
+        angle = 2.0 * PI * (double)i / (double)20; 
+
+        double x = center_x + 0.25 * cos(angle);
+        double y = center_y + 0.25 * sin(angle);
+
+        double u = (double)i / (double)20;
+        double v = 0.5;
+
+        pts_globulo[i] = crea_punto(i + 2, x, y, center_z, u, v);
+    }
+    
+    globulo->num_puntos = num_puntos;
+    globulo->puntos_figura = (Punto*)malloc(num_puntos * sizeof(Punto));
+    
+    if(globulo->puntos_figura == NULL) 
+    {
+        for(int j = 0; j < num_puntos; j++) 
+            free_punto(pts_globulo[j]);
+
+        free_personaje(globulo); 
+        return NULL;
+    }
+
+    for(int i = 0; i < num_puntos; i++) 
+    {
+        globulo->puntos_figura[i] = *pts_globulo[i];
+        free_punto(pts_globulo[i]); 
+    }
+
+    if(cola_recursos_global != NULL)
+        globulo->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/globulo_rojo.jpg");
+
+    return globulo;
+}
+
+Personaje *crea_globulo_blanco()
+{
+    int num_puntos = 8;
+    Punto *pts_globulo[8];
+    double angle;
+    double center_x = 7.0;
+    double center_y = 5.0;
+    double center_z = 0; 
+
+    Punto *rot_globulo = crea_punto(1, center_x, center_y, center_z, 0, 0); 
+
+    Personaje *globulo = crea_personaje(3000, "globulo_blanco", rot_globulo); 
+    free(rot_globulo); 
+    
+    if(globulo == NULL) 
+    {
+        return NULL;
+    }
+
+    for(int i = 0; i < 8; i++)
+    {
+        angle = 2.0 * PI * (double)i / (double)8; 
+        
+        double x = center_x + 0.35 * cos(angle);
+        double y = center_y + 0.35 * sin(angle);
+        
+        double u = (double)i / (double)8;
+        double v = 0.5;
+
+        pts_globulo[i] = crea_punto(i + 2, x, y, center_z, u, v);
+    }
+    
+    globulo->num_puntos = num_puntos;
+    globulo->puntos_figura = (Punto*)malloc(num_puntos * sizeof(Punto));
+    
+    if(globulo->puntos_figura == NULL) 
+    {
+        for(int j = 0; j < num_puntos; j++) 
+            free_punto(pts_globulo[j]);
+
+        free_personaje(globulo); 
+        return NULL;
+    }
+
+    for(int i = 0; i < num_puntos; i++) 
+    {
+        globulo->puntos_figura[i] = *pts_globulo[i];
+        free_punto(pts_globulo[i]); 
+    }
+
+    if(cola_recursos_global != NULL)
+        globulo->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/globulo_blanco.jpg");
+
+    return globulo;
+}
+
+Personaje *crea_vena() 
+{
+    //Vena es un rectangulo grande que cubre toda las escena
+    Punto *rot_vena = crea_punto(900, 0.0, 0.0, 0, 0, 0);
+    Personaje *vena = crea_personaje(3000, "vena", rot_vena);
+    free(rot_vena);
+
+    Punto *pts_vena[] = 
+    {
+        crea_punto(901, -1000.0, -500.0, 0, 0.0, 0.0),
+        crea_punto(902, 3000.0, -500.0, 0, 4.0, 0.0),
+        crea_punto(903, 3000.0, 1500.0, 0, 4.0, 2.0),
+        crea_punto(904, -1000.0, 1500.0, 0, 0.0, 2.0)
+    };
+    
+    vena->num_puntos = 4;
+    vena->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+    
+    for(int i = 0; i < 4; i++) 
+    {
+        vena->puntos_figura[i] = *pts_vena[i];
+        free(pts_vena[i]);
+    }
+    
+    //Convierte coordenadas a relativas
+    convierte_absolutas_a_relativas_personaje(vena, 0.0, 0.0);
+    
+    //Asigna textura al fondo
+    if(cola_recursos_global != NULL) 
+    {
+        vena->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/vena.jpg");
+    }
+    
+    return vena;
+}
+
+void visualiza_escena2() 
+{
+    Escena *escena_animacion = crea_escena(2, "Dentro del Cuerpo");
+
+    Audio *audio_dialogo = busca_audio_en_cola(cola_recursos_global, "Audio/dialogo.mp3");
+    
+    if(audio_dialogo == NULL) 
+    {
+        puts("No se pudo cargar el audio");
+    }
+
+    float amb_vena[4] = {0.3, 0.1, 0.1, 1.0};
+    float diff_vena[4] = {0.6, 0.2, 0.2, 1.0};
+    float spec_vena[4] = {0.2, 0.1, 0.1, 1.0};
+    Material *mat_vena = crea_material(amb_vena, diff_vena, spec_vena, 5.0);
+    
+    float amb_rojo[4] = {0.3, 0.05, 0.05, 1.0};
+    float diff_rojo[4] = {0.8, 0.1, 0.1, 1.0};
+    float spec_rojo[4] = {0.5, 0.2, 0.2, 1.0};
+    Material *mat_globulo_rojo = crea_material(amb_rojo, diff_rojo, spec_rojo, 20.0);
+    
+    float amb_blanco[4] = {0.3, 0.3, 0.25, 1.0};
+    float diff_blanco[4] = {0.9, 0.9, 0.8, 1.0};
+    float spec_blanco[4] = {0.6, 0.6, 0.5, 1.0};
+    Material *mat_globulo_blanco = crea_material(amb_blanco, diff_blanco, spec_blanco, 30.0);
+    
+    float amb_plaqueta[4] = {0.3, 0.25, 0.1, 1.0};
+    float diff_plaqueta[4] = {0.7, 0.6, 0.3, 1.0};
+    float spec_plaqueta[4] = {0.4, 0.35, 0.2, 1.0};
+    Material *mat_plaqueta = crea_material(amb_plaqueta, diff_plaqueta, spec_plaqueta, 15.0);
+
+    float amb_traje[4] = {0.2, 0.15, 0.1, 1.0};
+    float diff_traje[4] = {0.5, 0.4, 0.3, 1.0};
+    float spec_traje[4] = {0.2, 0.18, 0.15, 1.0};
+    Material *mat_traje = crea_material(amb_traje, diff_traje, spec_traje, 20.0);
+    
+    float amb_casco[4] = {0.25, 0.25, 0.3, 1.0};
+    float diff_casco[4] = {0.6, 0.6, 0.7, 1.0};
+    float spec_casco[4] = {0.9, 0.9, 0.9, 1.0};
+    Material *mat_casco = crea_material(amb_casco, diff_casco, spec_casco, 80.0);
+    
+    float amb_guantes[4] = {0.15, 0.15, 0.15, 1.0};
+    float diff_guantes[4] = {0.4, 0.4, 0.4, 1.0};
+    float spec_guantes[4] = {0.3, 0.3, 0.3, 1.0};
+    Material *mat_guantes = crea_material(amb_guantes, diff_guantes, spec_guantes, 30.0);
+    
+    float pos_luz1[4] = {500.0, 800.0, 400.0, 0.0};
+    float amb_luz1[4] = {0.3, 0.15, 0.15, 1.0};
+    float diff_luz1[4] = {0.8, 0.3, 0.3, 1.0};
+    float spec_luz1[4] = {0.5, 0.2, 0.2, 1.0};
+    Luz *luz_principal = crea_luz(0, pos_luz1, amb_luz1, diff_luz1, spec_luz1);
+    
+    float pos_luz2[4] = {-300.0, 600.0, 300.0, 1.0};
+    float amb_luz2[4] = {0.2, 0.1, 0.1, 1.0};
+    float diff_luz2[4] = {0.4, 0.2, 0.2, 1.0};
+    float spec_luz2[4] = {0.2, 0.1, 0.1, 1.0};
+    Luz *luz_relleno = crea_luz(1, pos_luz2, amb_luz2, diff_luz2, spec_luz2);
+    
+    int num_frames = 450;
+    double duracion_frame = 1.0 / 30.0;
+    
+    double pos_plaquetas[5][2] = 
+    {
+        {300.0, 350.0},
+        {500.0, 450.0},
+        {700.0, 300.0},
+        {900.0, 400.0},
+        {1100.0, 350.0}
+    };
+    
+    double pos_blancos[5][2] = 
+    {
+        {250.0, 300.0},
+        {450.0, 500.0},
+        {650.0, 250.0},
+        {850.0, 450.0},
+        {1050.0, 300.0}
+    };
+    
+    double pos_rojos[5][2] = 
+    {
+        {350.0, 400.0},
+        {550.0, 350.0},
+        {750.0, 450.0},
+        {950.0, 300.0},
+        {150.0, 350.0}
+    };
+    
+    for(int f = 0; f < num_frames; f++) 
+    {
+        double t = (double)f / (num_frames - 1);
+
+        //Vena (fondo)
+        Personaje *vena = crea_vena();
+        NodoJerarquia *nodo_vena = crea_nodo_jerarquia(4000, 1, vena);
+        nodo_vena->pos_x = 0.0;
+        nodo_vena->pos_y = 0.0;
+        nodo_vena->escala = 1.0;
+        asigna_material_personaje(vena, mat_vena);
+        
+        //Crea y posicionar 25 plaquetas
+        for(int i = 0; i < 25; i++) 
+        {
+            Personaje *plaqueta = crea_plaqueta();
+            NodoJerarquia *nodo_plaqueta = crea_nodo_jerarquia(1000 + i, 1, plaqueta);
+            
+            //Movimiento sinusoidal vertical
+            double offset_y = sin(t * PI * 3 + i * PI / 2.5) * 60.0;
+            nodo_plaqueta->pos_x = pos_plaquetas[i][0];
+            nodo_plaqueta->pos_y = pos_plaquetas[i][1] + offset_y;
+            nodo_plaqueta->escala = 100.0;
+            nodo_plaqueta->rot_z = t * 180.0 + i * 72.0; //Rotacion lenta
+            
+            asigna_material_personaje(plaqueta, mat_plaqueta);
+            agrega_hijo_jerarquia(nodo_vena, nodo_plaqueta);
+        }
+        
+        //Crea y posicionar 25 globulos blancos
+        for(int i = 0; i < 25; i++) 
+        {
+            Personaje *globulo_blanco = crea_globulo_blanco();
+            NodoJerarquia *nodo_blanco = crea_nodo_jerarquia(2000 + i, 1, globulo_blanco);
+            
+            //Movimiento sinusoidal horizontal y vertical
+            double offset_x = cos(t * PI * 2.5 + i * PI / 2) * 50.0;
+            double offset_y = sin(t * PI * 2 + i * PI / 2) * 70.0;
+            nodo_blanco->pos_x = pos_blancos[i][0] + offset_x;
+            nodo_blanco->pos_y = pos_blancos[i][1] + offset_y;
+            nodo_blanco->escala = 100.0;
+            nodo_blanco->rot_z = t * 120.0 + i * 72.0;
+            
+            asigna_material_personaje(globulo_blanco, mat_globulo_blanco);
+            agrega_hijo_jerarquia(nodo_vena, nodo_blanco);
+        }
+        
+        //Mr. Atomix
+        Personaje *mr_atomix = crea_mr_atomix();
+        
+        //Asigna materiales a las partes de Mr. Atomix
+        Personaje *torso = busca_parte_personaje(mr_atomix, "torso");
+
+        if(torso) 
+            asigna_material_personaje(torso, mat_traje);
+        
+        Personaje *cuello = busca_parte_personaje(mr_atomix, "cuello");
+
+        if(cuello) 
+            asigna_material_personaje(cuello, mat_traje);
+
+        Personaje *cabeza = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza) 
+            asigna_material_personaje(cabeza, mat_casco);
+        
+        Personaje *brazo_izq = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+
+        if(brazo_izq) 
+            asigna_material_personaje(brazo_izq, mat_traje);
+        
+        Personaje *brazo_der = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_der) 
+            asigna_material_personaje(brazo_der, mat_traje);
+        
+        Personaje *codo_izq = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+
+        if(codo_izq) 
+            asigna_material_personaje(codo_izq, mat_traje);
+        
+        Personaje *codo_der = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_der) 
+            asigna_material_personaje(codo_der, mat_traje);
+        
+        Personaje *mano_izq = busca_parte_personaje(mr_atomix, "mano_izquierda");
+
+        if(mano_izq) 
+            asigna_material_personaje(mano_izq, mat_guantes);
+        
+        Personaje *mano_der = busca_parte_personaje(mr_atomix, "mano_derecha");
+
+        if(mano_der) 
+            asigna_material_personaje(mano_der, mat_guantes);
+        
+        Personaje *pierna_izq = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+
+        if(pierna_izq) 
+            asigna_material_personaje(pierna_izq, mat_traje);
+        
+        Personaje *pierna_der = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_der) asigna_material_personaje(pierna_der, mat_traje);
+        
+        Personaje *rodilla_izq = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+
+        if(rodilla_izq) 
+            asigna_material_personaje(rodilla_izq, mat_traje);
+        
+        Personaje *rodilla_der = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_der) 
+            asigna_material_personaje(rodilla_der, mat_traje);
+        
+        Personaje *pie_izq = busca_parte_personaje(mr_atomix, "pie_izquierdo");
+
+        if(pie_izq) 
+            asigna_material_personaje(pie_izq, mat_guantes);
+        
+        Personaje *pie_der = busca_parte_personaje(mr_atomix, "pie_derecho");
+
+        if(pie_der) 
+            asigna_material_personaje(pie_der, mat_guantes);
+        
+        //Dialogo
+        if(f < 330) 
+        {
+            char *dialogos2[] = 
+            {
+                "Uf! Aqui estamos dentro",
+                "del cuerpo humano. Esos",
+                "salvavidas rojos son",
+                "globulos rojos, llevan",
+                "oxigeno a tu sangre."
+            };
+            
+            Dialogo *dialogo_frame = crea_dialogo(5, dialogos2, audio_dialogo);
+
+            if(dialogo_frame != NULL) 
+                muestra_dialogo(mr_atomix, dialogo_frame);
+            
+            for(int i = 0; i < 4; i++) 
+            {
+                strcpy(dialogo_frame->lineas[i], dialogos2[i]);
+                dialogo_frame->total_caracteres += strlen(dialogos2[i]);
+            }
+            
+            dialogo_frame->audio = audio_dialogo;
+            dialogo_frame->activo = true;
+            dialogo_frame->tiempo_mostrado = f * duracion_frame;
+            mr_atomix->dialogo = dialogo_frame;
+        } 
+        else 
+            mr_atomix->dialogo = NULL;
+
+        NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(3500, 1, mr_atomix);
+        
+        //Movimiento horizontal y vertical (nadando)
+        double movimiento_nado_y = sin(t * PI * 4) * 40.0; // Movimiento vertical ondulante
+        nodo_atomix->pos_x = 200.0 + t * 800.0;
+        nodo_atomix->pos_y = 350.0 + movimiento_nado_y;
+        nodo_atomix->escala = 14.0; // Mitad de la escala original
+        
+        //Animacion de nado (brazos y piernas sincronizados)
+        double ciclo_nado = sin(t * PI * 12) * 20.0; // Ciclo más rápido para nado
+        
+        // Anima brazos (brazadas de nado)
+        Personaje *brazo_izq_anim = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+        Personaje *brazo_der_anim = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_izq_anim) 
+            brazo_izq_anim->angulo_actual = ciclo_nado + 30.0;
+
+        if(brazo_der_anim) 
+            brazo_der_anim->angulo_actual = -ciclo_nado - 30.0;
+        
+        //Anima piernas (patadas de nado)
+        Personaje *pierna_izq_anim = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+        Personaje *pierna_der_anim = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_izq_anim) 
+            pierna_izq_anim->angulo_actual = -ciclo_nado * 0.7;
+
+        if(pierna_der_anim) 
+            pierna_der_anim->angulo_actual = ciclo_nado * 0.7;
+        
+        //Anima codos
+        Personaje *codo_izq_anim = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+        Personaje *codo_der_anim = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_izq_anim) 
+            codo_izq_anim->angulo_actual = fabs(ciclo_nado) * 0.8;
+
+        if(codo_der_anim) 
+            codo_der_anim->angulo_actual = fabs(ciclo_nado) * 0.8;
+        
+        //Anima rodillas
+        Personaje *rodilla_izq_anim = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+        Personaje *rodilla_der_anim = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_izq_anim) 
+            rodilla_izq_anim->angulo_actual = fabs(ciclo_nado) * 0.5;
+
+        if(rodilla_der_anim) 
+            rodilla_der_anim->angulo_actual = fabs(ciclo_nado) * 0.5;
+        
+        //Movimiento de cabeza
+        Personaje *cabeza_anim = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza_anim) 
+            cabeza_anim->angulo_actual = sin(t * PI * 6) * 8.0;
+        
+        agrega_hijo_jerarquia(nodo_vena, nodo_atomix);
+        
+        //Crear y posicionar 25 globulos rojos
+        for(int i = 0; i < 25; i++) 
+        {
+            Personaje *globulo_rojo = crea_globulo_rojo();
+            NodoJerarquia *nodo_rojo = crea_nodo_jerarquia(3000 + i, 1, globulo_rojo);
+            
+            //Movimiento sinusoidal
+            double offset_x = cos(t * PI * 3 + i * PI / 2.5) * 40.0;
+            double offset_y = sin(t * PI * 2.5 + i * PI / 3) * 80.0;
+            nodo_rojo->pos_x = pos_rojos[i][0] + offset_x;
+            nodo_rojo->pos_y = pos_rojos[i][1] + offset_y;
+            nodo_rojo->escala = 100.0;
+            nodo_rojo->rot_z = t * 200.0 + i * 72.0;
+            
+            asigna_material_personaje(globulo_rojo, mat_globulo_rojo);
+            agrega_hijo_jerarquia(nodo_vena, nodo_rojo);
+        }
+        
+        Luz *luz_principal_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_principal_frame = *luz_principal;
+        
+        Luz *luz_relleno_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_relleno_frame = *luz_relleno;
+        
+        NodoJerarquia *nodo_luz1 = crea_nodo_jerarquia(5000, 3, luz_principal_frame);
+        NodoJerarquia *nodo_luz2 = crea_nodo_jerarquia(5001, 3, luz_relleno_frame);
+        
+        nodo_luz1->pos_x = 500.0 + cos(t * PI * 2) * 150.0;
+        nodo_luz1->pos_y = 800.0;
+        nodo_luz1->pos_z = 400.0;
+        
+        nodo_luz2->pos_x = -300.0;
+        nodo_luz2->pos_y = 600.0;
+        nodo_luz2->pos_z = 300.0;
+        
+        agrega_hijo_jerarquia(nodo_vena, nodo_luz1);
+        agrega_hijo_jerarquia(nodo_vena, nodo_luz2);
+        
+        Frame *frame = crea_frame(f + 1, nodo_vena, duracion_frame);
+        agrega_frame_escena(escena_animacion, frame);
+    }
+    
+    free(mat_vena);
+    free(mat_globulo_rojo);
+    free(mat_globulo_blanco);
+    free(mat_plaqueta);
+    free(mat_traje);
+    free(mat_casco);
+    free(mat_guantes);
+    free(luz_principal);
+    free(luz_relleno);
+    
+    encola_escena(pelicula_global, escena_animacion);
+}
+
 int main(int argc, char** argv) 
 {
     glutInit(&argc, argv);
@@ -3806,6 +4392,8 @@ int main(int argc, char** argv)
     pelicula_global = crea_pelicula();
 
     visualiza_escena1();
+
+    visualiza_escena2();
 
     escena_actual = pelicula_global->frente;
     
