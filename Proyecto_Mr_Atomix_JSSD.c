@@ -122,6 +122,7 @@ typedef struct Dialogo
     Audio *audio;
     float tiempo_mostrado;
     bool activo;
+    bool audio_pausado;
 }Dialogo;
 
 typedef struct NodoRecurso 
@@ -545,6 +546,7 @@ Dialogo *crea_dialogo(int n, char *textos[], Audio *audio)
     dialogo->audio = audio;
     dialogo->tiempo_mostrado = 0.0;
     dialogo->activo = false;
+    dialogo->audio_pausado = false;
     return dialogo;
 }
 
@@ -562,6 +564,7 @@ void muestra_dialogo(Personaje *personaje, Dialogo *dialogo)
     personaje->dialogo = dialogo;
     dialogo->activo = true;
     dialogo->tiempo_mostrado = 0.0;
+    dialogo->audio_pausado = false;
     
     if(dialogo->audio != NULL && dialogo->audio->cargado) 
     {
@@ -582,6 +585,8 @@ void oculta_dialogo(Personaje *personaje)
 
         //Desactiva loop
         set_audio_loop(personaje->dialogo->audio, false);
+
+        personaje->dialogo->audio_pausado = false;
     }
 
     personaje->dialogo->activo = false;
@@ -593,7 +598,7 @@ void actualiza_dialogo(Personaje *personaje, float tiempo)
     if(personaje == NULL || personaje->dialogo == NULL) 
         return;
 
-    if(personaje->dialogo->activo == false) 
+    if(personaje->dialogo->activo == false || personaje->dialogo->audio_pausado)
         return;
     
     Dialogo *dialogo = personaje->dialogo;
@@ -2020,10 +2025,49 @@ void pausa()
     en_pausa = !en_pausa;
     
     if(en_pausa) 
+    {
+        //Pausa todos los audios activos
+        if(frame_actual != NULL && frame_actual->arbol_jerarquia != NULL)
+        {
+            //Busca todos los dialogos activos en la jerarquia
+            NodoJerarquia *nodo_atomix = busca_mr_atomix_en_arbol(frame_actual->arbol_jerarquia);
+
+            if(nodo_atomix != NULL)
+            {
+                Personaje *atomix = (Personaje*)nodo_atomix->dato;
+
+                if(atomix->dialogo != NULL && atomix->dialogo->activo && atomix->dialogo->audio != NULL && atomix->dialogo->audio->reproduciendo)
+                {
+                    detiene_audio(atomix->dialogo->audio);
+                    atomix->dialogo->audio_pausado = true;
+                    puts("Audio pausado");
+                }
+            }
+        }
+
         puts("=== PAUSA ===");
+    }
 
     else 
     {
+        //Reanuda audios que estaban pausados
+        if(frame_actual != NULL && frame_actual->arbol_jerarquia != NULL)
+        {
+            NodoJerarquia *nodo_atomix = busca_mr_atomix_en_arbol(frame_actual->arbol_jerarquia);
+
+            if(nodo_atomix != NULL)
+            {
+                Personaje *atomix = (Personaje*)nodo_atomix->dato;
+
+                if(atomix->dialogo != NULL && atomix->dialogo->activo && atomix->dialogo->audio != NULL && atomix->dialogo->audio_pausado)
+                {
+                    reproduce_audio(atomix->dialogo->audio);
+                    atomix->dialogo->audio_pausado = false;
+                    puts("Audio reanudado");
+                }
+            }
+        }
+
         puts("=== REANUDADO ===");
         ultimo_tiempo = glutGet(GLUT_ELAPSED_TIME);
     }
@@ -2086,9 +2130,10 @@ void retroceder()
                         //Reinicia el tiempo del dialogo
                         atomix->dialogo->tiempo_mostrado = 0.0f;
                         atomix->dialogo->activo = true;
+                        atomix->dialogo->audio_pausado = false;
                         
                         //Reproduce el audio desde el principio
-                        if(atomix->dialogo->audio != NULL && atomix->dialogo->audio->cargado)
+                        if(en_pausa == false && atomix->dialogo->audio != NULL && atomix->dialogo->audio->cargado)
                         {
                             //Configura para loop mientras se muestra
                             set_audio_loop(atomix->dialogo->audio, true);
@@ -2128,6 +2173,9 @@ void reinicia_pelicula()
             if(atomix->dialogo != NULL && atomix->dialogo->audio != NULL)
             {
                 detiene_audio(atomix->dialogo->audio);
+
+                if(atomix->dialogo->audio_pausado)
+                    atomix->dialogo->audio_pausado = false;
             }
         }
     }
