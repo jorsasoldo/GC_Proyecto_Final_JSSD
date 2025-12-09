@@ -711,6 +711,7 @@ void dibuja_burbuja_dialogo(Personaje *personaje, float escala_personaje)
     glVertex2f(0.5, -alto/2);
     glEnd();
     
+    //Dialogo
     glColor3f(0.0, 0.0, 0.0);
     
     float escala_texto = 0.01;
@@ -2683,6 +2684,11 @@ void encola_todas_las_texturas(ColaRecursos *cola)
     encola_recurso(cola, "Figuras/Texturas/globulo_blanco.jpg", 0);
     encola_recurso(cola, "Figuras/Texturas/globulo_rojo.jpg", 0);
     encola_recurso(cola, "Figuras/Texturas/plaqueta.jpg", 0);
+
+    //Escena 3
+    encola_recurso(cola, "Figuras/Texturas/celula.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/mitocondria.jpg", 0);
+    encola_recurso(cola, "Figuras/Texturas/adn.jpg", 0);
 }
 
 Audio *busca_audio_en_cola(ColaRecursos *cola, char *ruta) 
@@ -4337,6 +4343,184 @@ void visualiza_escena2()
     free(luz_relleno);
     
     encola_escena(pelicula_global, escena_animacion);
+}
+
+Personaje *crea_celula() 
+{
+    //Celula es un rectangulo grande que cubre toda las escena
+    Punto *rot_celula = crea_punto(900, 0.0, 0.0, 0, 0, 0);
+    Personaje *celula = crea_personaje(3000, "fondo", rot_celula);
+    free(rot_celula);
+
+    Punto *pts_celula[] = 
+    {
+        crea_punto(901, -1000.0, -500.0, 0, 0.0, 0.0),
+        crea_punto(902, 3000.0, -500.0, 0, 4.0, 0.0),
+        crea_punto(903, 3000.0, 1500.0, 0, 4.0, 2.0),
+        crea_punto(904, -1000.0, 1500.0, 0, 0.0, 2.0)
+    };
+    
+    celula->num_puntos = 4;
+    celula->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+    
+    for(int i = 0; i < 4; i++) 
+    {
+        celula->puntos_figura[i] = *pts_celula[i];
+        free(pts_celula[i]);
+    }
+    
+    //Convierte coordenadas a relativas
+    convierte_absolutas_a_relativas_personaje(celula, 0.0, 0.0);
+    
+    //Asigna textura al fondo
+    if(cola_recursos_global != NULL) 
+    {
+        celula->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/celula.jpg");
+    }
+    
+    return celula;
+}
+
+Personaje *crea_adn()
+{
+    Textura *tex_adn = NULL;
+
+    if (cola_recursos_global != NULL) 
+        tex_adn = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/adn.jpg");
+
+    Punto *rot_tira_central = crea_punto(5, 7.868733751428628, 7.020998037361379, 0, 0, 0);
+    Personaje *tira_central = crea_personaje(10000, "tira_central", rot_tira_central);
+    free(rot_tira_central);
+
+    Punto *pts_tira_central[] = 
+    {
+        crea_punto(1, 7.199145855194124, 8.027532004197273, 0, 0.0, 1.0),
+        crea_punto(2, 6.808109589041096, 7.677041095890411, 0, 0.0, 0.0),
+        crea_punto(3, 8.39064399770247, 6.22159586444572, 0, 1.0, 0.0),
+        crea_punto(4, 8.84727863751285, 6.448090462034285, 0, 1.0, 1.0)
+    };
+
+    tira_central->num_puntos = 4;
+
+    tira_central->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        tira_central->puntos_figura[i] = *pts_tira_central[i];
+        free(pts_tira_central[i]);
+    }
+    
+    tira_central->textura = tex_adn;
+    tira_central->escala_x = 1.0;
+    tira_central->escala_y = 1.0;
+
+    Punto *rot_tira_izq = crea_punto(10, 8.871011092575511, 7.502309400946359, 0, 0, 0);
+    Personaje *tira_arriba_izq = crea_personaje(10001, "tira_arriba_izq", rot_tira_izq);
+    free(rot_tira_izq);
+
+    Punto *pts_tira_izq[] = 
+    {
+        crea_punto(6, 8.26, 9.88, 0, 0.0, 1.0),
+        crea_punto(7, 8.74, 9.76, 0, 0.0, 0.0),
+        crea_punto(8, 9.32, 5.56, 0, 1.0, 0.0),
+        crea_punto(9, 8.90, 6.14, 0, 1.0, 1.0)
+    };
+
+    tira_arriba_izq->num_puntos = 4;
+
+    tira_arriba_izq->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+
+    for(int i = 0; i < 4; i++) 
+    {
+        tira_arriba_izq->puntos_figura[i] = *pts_tira_izq[i];
+        free(pts_tira_izq[i]);
+    }
+    
+    tira_arriba_izq->textura = tex_adn;
+    agrega_hijo_personaje(tira_central, tira_arriba_izq);
+
+    
+    Punto *rot_tira_der = crea_punto(15, 7.844458686577263, 8.313285801684973, 0, 0, 0);
+    Personaje *tira_arriba_der = crea_personaje(10002, "tira_arriba_der", rot_tira_der);
+    free(rot_tira_der);
+
+    Punto *pts_tira_der[] = 
+    {
+        crea_punto(11, 10.24, 8.68, 0, 0.0, 1.0),
+        crea_punto(12, 10.66, 8.42, 0, 0.0, 0.0),
+        crea_punto(13, 6.78, 7.98, 0, 1.0, 0.0),
+        crea_punto(14, 6.32, 8.32, 0, 1.0, 1.0) 
+    };
+
+    tira_arriba_der->num_puntos = 4;
+    tira_arriba_der->puntos_figura = (Punto*)malloc(4 * sizeof(Punto));
+    for(int i = 0; i < 4; i++) {
+        tira_arriba_der->puntos_figura[i] = *pts_tira_der[i];
+        free(pts_tira_der[i]);
+    }
+
+    tira_arriba_der->textura = tex_adn;
+    agrega_hijo_personaje(tira_central, tira_arriba_der);
+
+    convierte_absolutas_a_relativas_personaje(tira_central, 0.0, 0.0);
+
+    return tira_central;
+}
+
+
+Personaje *crea_mitocondria() 
+{
+    Punto *rot_mitocondria = crea_punto(100, 6.1999002993464485, 5.005587609794676, 0.0, 0.0, 0.0);
+    
+    Personaje *mitocondria = crea_personaje(17, "mitocondria", rot_mitocondria);
+    free(rot_mitocondria);
+
+    Punto *pts_mitocondria[] = 
+    {
+        crea_punto(1, 6.00, 8.00, 0.0, 0.439, 0.902),
+        crea_punto(2, 7.16, 8.68, 0.0, 0.624, 1.000),
+        crea_punto(3, 8.54, 8.62, 0.0, 0.844, 0.988),
+        crea_punto(4, 9.14, 7.88, 0.0, 0.939, 0.884),
+        crea_punto(5, 9.52, 7.38, 0.0, 1.000, 0.812),
+        crea_punto(6, 8.74, 5.40, 0.0, 0.875, 0.528),
+        crea_punto(7, 7.00, 3.00, 0.0, 0.598, 0.181),
+        crea_punto(8, 6.00, 2.00, 0.0, 0.439, 0.037),
+        crea_punto(9, 4.62, 1.74, 0.0, 0.220, 0.000),
+        crea_punto(10, 3.70, 2.14, 0.0, 0.073, 0.058),
+        crea_punto(11, 3.24, 2.98, 0.0, 0.000, 0.178),
+        crea_punto(12, 3.48, 3.88, 0.0, 0.038, 0.308)
+    };
+    
+    int num_puntos = 12;
+
+    mitocondria->num_puntos = num_puntos;
+
+    mitocondria->puntos_figura = (Punto*)malloc(num_puntos * sizeof(Punto));
+    
+    if(mitocondria->puntos_figura == NULL) 
+    {
+        free_personaje(mitocondria); 
+
+        for(int i = 0; i < num_puntos; i++) 
+            free_punto(pts_mitocondria[i]);
+
+        return NULL;
+    }
+
+    for(int i = 0; i < num_puntos; i++) 
+        mitocondria->puntos_figura[i] = *pts_mitocondria[i];
+
+    for(int i = 0; i < num_puntos; i++)
+        free_punto(pts_mitocondria[i]);
+
+    convierte_absolutas_a_relativas_personaje(mitocondria, 0.0, 0.0);
+
+    if(cola_recursos_global != NULL) 
+    {
+        mitocondria->textura = busca_textura_en_cola(cola_recursos_global, "Figuras/Texturas/mitocondria.jpg");
+    }
+
+    return mitocondria;
 }
 
 int main(int argc, char** argv) 
