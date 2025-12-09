@@ -3228,9 +3228,9 @@ void visualiza_escena1()
     float spec_sol[4] = {0.8, 0.8, 0.7, 1.0};
     Luz *luz_sol = crea_luz(0, pos_sol, amb_sol, diff_sol, spec_sol);
     
-    //luz de relleno (sky light)
+    //luz de relleno (luz del cielo)
     float pos_cielo[4] = {0.0, 500.0, 0.0, 1.0};
-    float amb_cielo_luz[4] = {0.2, 0.2, 0.3, 1.0};
+    float amb_cielo_luz[4] = {0.3, 0.3, 0.4, 1.0};
     float diff_cielo_luz[4] = {0.3, 0.3, 0.5, 1.0};
     float spec_cielo_luz[4] = {0.1, 0.1, 0.2, 1.0};
     Luz *luz_cielo = crea_luz(1, pos_cielo, amb_cielo_luz, diff_cielo_luz, spec_cielo_luz);
