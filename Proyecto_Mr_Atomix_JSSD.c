@@ -6472,6 +6472,318 @@ Personaje *crea_vista_galaxia()
     return fondo;
 }
 
+void visualiza_escena8() 
+{
+    Escena *escena_animacion = crea_escena(8, "Via Lactea");
+
+    Audio *audio_dialogo = busca_audio_en_cola(cola_recursos_global, "Audio/dialogo.mp3");
+    
+    if(audio_dialogo == NULL) 
+    {
+        puts("No se pudo cargar el audio");
+    }
+
+    float amb_galaxia[4] = {0.05, 0.05, 0.15, 1.0};
+    float diff_galaxia[4] = {0.1, 0.1, 0.3, 1.0};
+    float spec_galaxia[4] = {0.3, 0.3, 0.6, 1.0};
+    Material *mat_galaxia = crea_material(amb_galaxia, diff_galaxia, spec_galaxia, 80.0);
+    
+    float amb_traje[4] = {0.08, 0.06, 0.15, 1.0};
+    float diff_traje[4] = {0.2, 0.15, 0.4, 1.0};
+    float spec_traje[4] = {0.8, 0.7, 1.0, 1.0};
+    Material *mat_traje = crea_material(amb_traje, diff_traje, spec_traje, 120.0);
+    
+    float amb_casco[4] = {0.1, 0.1, 0.3, 1.0};
+    float diff_casco[4] = {0.3, 0.3, 0.7, 1.0};
+    float spec_casco[4] = {1.0, 1.0, 1.0, 1.0};
+    Material *mat_casco = crea_material(amb_casco, diff_casco, spec_casco, 200.0);
+    
+    float amb_guantes[4] = {0.06, 0.05, 0.12, 1.0};
+    float diff_guantes[4] = {0.15, 0.12, 0.3, 1.0};
+    float spec_guantes[4] = {0.6, 0.5, 0.9, 1.0};
+    Material *mat_guantes = crea_material(amb_guantes, diff_guantes, spec_guantes, 100.0);
+    
+    float pos_luz_central[4] = {900.0, 700.0, 400.0, 0.0};
+    float amb_luz_central[4] = {0.1, 0.1, 0.25, 1.0};
+    float diff_luz_central[4] = {0.3, 0.3, 0.6, 1.0};
+    float spec_luz_central[4] = {0.5, 0.5, 1.0, 1.0};
+    Luz *luz_central = crea_luz(0, pos_luz_central, amb_luz_central, diff_luz_central, spec_luz_central);
+    
+    float pos_luz_estrellas[4] = {300.0, 200.0, 100.0, 1.0};
+    float amb_luz_estrellas[4] = {0.05, 0.05, 0.1, 1.0};
+    float diff_luz_estrellas[4] = {0.1, 0.1, 0.2, 1.0};
+    float spec_luz_estrellas[4] = {0.2, 0.2, 0.4, 1.0};
+    Luz *luz_estrellas = crea_luz(1, pos_luz_estrellas, amb_luz_estrellas, diff_luz_estrellas, spec_luz_estrellas);
+    
+    float pos_luz_nebulosa[4] = {1200.0, 400.0, 300.0, 1.0};
+    float amb_luz_nebulosa[4] = {0.1, 0.05, 0.15, 1.0};
+    float diff_luz_nebulosa[4] = {0.25, 0.1, 0.3, 1.0};
+    float spec_luz_nebulosa[4] = {0.4, 0.2, 0.5, 1.0};
+    Luz *luz_nebulosa = crea_luz(2, pos_luz_nebulosa, amb_luz_nebulosa, diff_luz_nebulosa, spec_luz_nebulosa);
+
+    float pos_luz_atomix[4] = {0.0, 0.0, 0.0, 1.0};
+    float amb_luz_atomix[4] = {0.15, 0.1, 0.3, 1.0};
+    float diff_luz_atomix[4] = {0.3, 0.2, 0.6, 1.0};
+    float spec_luz_atomix[4] = {0.8, 0.6, 1.0, 1.0};
+    Luz *luz_atomix = crea_luz(3, pos_luz_atomix, amb_luz_atomix, diff_luz_atomix, spec_luz_atomix);
+    
+    int num_frames = 450;
+    double duracion_frame = 1.0 / 30.0;
+    
+    for(int f = 0; f < num_frames; f++) 
+    {
+        double t = (double)f / (num_frames - 1);
+
+        Personaje *galaxia_fondo = crea_vista_galaxia();
+        NodoJerarquia *nodo_galaxia = crea_nodo_jerarquia(40000, 1, galaxia_fondo);
+        nodo_galaxia->pos_x = 0.0;
+        nodo_galaxia->pos_y = 0.0;
+        nodo_galaxia->escala = 1.0;
+        
+        //Efecto de rotacion galactica
+        nodo_galaxia->rot_z = t * 5.0;
+        
+        asigna_material_personaje(galaxia_fondo, mat_galaxia);
+        
+        Personaje *mr_atomix = crea_mr_atomix();
+
+        Personaje *torso = busca_parte_personaje(mr_atomix, "torso");
+
+        if(torso) 
+            asigna_material_personaje(torso, mat_traje);
+        
+        Personaje *cuello = busca_parte_personaje(mr_atomix, "cuello");
+
+        if(cuello) 
+            asigna_material_personaje(cuello, mat_traje);
+
+        Personaje *cabeza = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza) 
+            asigna_material_personaje(cabeza, mat_casco);
+        
+        Personaje *brazo_izq = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+
+        if(brazo_izq) 
+            asigna_material_personaje(brazo_izq, mat_traje);
+        
+        Personaje *brazo_der = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_der) 
+            asigna_material_personaje(brazo_der, mat_traje);
+        
+        Personaje *codo_izq = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+
+        if(codo_izq) 
+            asigna_material_personaje(codo_izq, mat_traje);
+        
+        Personaje *codo_der = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_der) 
+            asigna_material_personaje(codo_der, mat_traje);
+        
+        Personaje *mano_izq = busca_parte_personaje(mr_atomix, "mano_izquierda");
+
+        if(mano_izq) 
+            asigna_material_personaje(mano_izq, mat_guantes);
+        
+        Personaje *mano_der = busca_parte_personaje(mr_atomix, "mano_derecha");
+
+        if(mano_der) 
+            asigna_material_personaje(mano_der, mat_guantes);
+        
+        Personaje *pierna_izq = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+
+        if(pierna_izq) 
+            asigna_material_personaje(pierna_izq, mat_traje);
+        
+        Personaje *pierna_der = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_der) 
+            asigna_material_personaje(pierna_der, mat_traje);
+        
+        Personaje *rodilla_izq = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+
+        if(rodilla_izq) 
+            asigna_material_personaje(rodilla_izq, mat_traje);
+        
+        Personaje *rodilla_der = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_der) 
+            asigna_material_personaje(rodilla_der, mat_traje);
+        
+        Personaje *pie_izq = busca_parte_personaje(mr_atomix, "pie_izquierdo");
+
+        if(pie_izq)
+            asigna_material_personaje(pie_izq, mat_guantes);
+        
+        Personaje *pie_der = busca_parte_personaje(mr_atomix, "pie_derecho");
+
+        if(pie_der) 
+            asigna_material_personaje(pie_der, mat_guantes);
+        
+        //Dialogo
+        if(f < 330) 
+        {
+            char *dialogos8[] = 
+            {
+                "Ahora somos gigantes. Esta",
+                "es la Via Lactea, nuestra",
+                "ciudad de estrellas. Ven",
+                "ese remolino? Son",
+                "millones de soles!"
+            };
+            
+            Dialogo *dialogo_frame = crea_dialogo(5, dialogos8, audio_dialogo);
+            
+            if(dialogo_frame != NULL) 
+            {
+                muestra_dialogo(mr_atomix, dialogo_frame);
+                dialogo_frame->tiempo_mostrado = f * duracion_frame;
+                mr_atomix->dialogo = dialogo_frame;
+            }
+        }
+        else 
+            mr_atomix->dialogo = NULL;
+
+        NodoJerarquia *nodo_atomix = crea_nodo_jerarquia(41000, 1, mr_atomix);
+        
+        //Posicion central flotando en la galaxia
+        //Movimiento sutil como si estuviera flotando en el espacio profundo
+        double movimiento_x = 900.0 + sin(t * PI * 0.5) * 100.0;
+        double movimiento_y = 700.0 + cos(t * PI * 0.6) * 80.0;
+        
+        nodo_atomix->pos_x = movimiento_x;
+        nodo_atomix->pos_y = movimiento_y;
+        
+        nodo_atomix->escala = 28.0;
+        
+        //Efecto de brillo pulsante
+        double pulso_brillo = 1.0 + sin(t * PI * 8) * 0.1;
+        nodo_atomix->escala *= pulso_brillo;
+        
+        double ciclo_brazos = sin(t * PI * 2) * 20.0;
+        double ciclo_piernas = sin(t * PI * 1.5) * 10.0;
+        
+        Personaje *brazo_izq_anim = busca_parte_personaje(mr_atomix, "brazo_izquierdo");
+        Personaje *brazo_der_anim = busca_parte_personaje(mr_atomix, "brazo_derecho");
+
+        if(brazo_izq_anim)
+            brazo_izq_anim->angulo_actual = ciclo_brazos;
+
+        if(brazo_der_anim) 
+            brazo_der_anim->angulo_actual = -ciclo_brazos;
+        
+        Personaje *pierna_izq_anim = busca_parte_personaje(mr_atomix, "pierna_izquierda");
+        Personaje *pierna_der_anim = busca_parte_personaje(mr_atomix, "pierna_derecha");
+
+        if(pierna_izq_anim) 
+            pierna_izq_anim->angulo_actual = -ciclo_piernas;
+
+        if(pierna_der_anim) 
+            pierna_der_anim->angulo_actual = ciclo_piernas;
+        
+        Personaje *codo_izq_anim = busca_parte_personaje(mr_atomix, "codo_izquierdo");
+        Personaje *codo_der_anim = busca_parte_personaje(mr_atomix, "codo_derecho");
+
+        if(codo_izq_anim) 
+            codo_izq_anim->angulo_actual = fabs(ciclo_brazos) * 0.5;
+
+        if(codo_der_anim) 
+            codo_der_anim->angulo_actual = fabs(ciclo_brazos) * 0.5;
+        
+        Personaje *rodilla_izq_anim = busca_parte_personaje(mr_atomix, "rodilla_izquierda");
+        Personaje *rodilla_der_anim = busca_parte_personaje(mr_atomix, "rodilla_derecha");
+
+        if(rodilla_izq_anim) 
+            rodilla_izq_anim->angulo_actual = fabs(ciclo_piernas) * 0.6;
+
+        if(rodilla_der_anim) 
+            rodilla_der_anim->angulo_actual = fabs(ciclo_piernas) * 0.6;
+        
+        Personaje *cabeza_anim = busca_parte_personaje(mr_atomix, "cabeza");
+
+        if(cabeza_anim) cabeza_anim->angulo_actual = sin(t * PI * 3) * 8.0;
+        
+        agrega_hijo_jerarquia(nodo_galaxia, nodo_atomix);
+        
+        Luz *luz_central_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_central_frame = *luz_central;
+        
+        Luz *luz_estrellas_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_estrellas_frame = *luz_estrellas;
+        
+        Luz *luz_nebulosa_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_nebulosa_frame = *luz_nebulosa;
+        
+        Luz *luz_atomix_frame = (Luz*)malloc(sizeof(Luz));
+        *luz_atomix_frame = *luz_atomix;
+        
+        NodoJerarquia *nodo_luz_central = crea_nodo_jerarquia(42000, 3, luz_central_frame);
+        NodoJerarquia *nodo_luz_estrellas = crea_nodo_jerarquia(42001, 3, luz_estrellas_frame);
+        NodoJerarquia *nodo_luz_nebulosa = crea_nodo_jerarquia(42002, 3, luz_nebulosa_frame);
+        NodoJerarquia *nodo_luz_atomix = crea_nodo_jerarquia(42003, 3, luz_atomix_frame);
+        
+        double parpadeo_estrellas = 0.8 + sin(t * PI * 15) * 0.2;
+        double parpadeo_nebulosa = 0.9 + cos(t * PI * 12) * 0.1;
+        double brillo_atomix = 1.0 + sin(t * PI * 10) * 0.3;
+
+        nodo_luz_central->pos_x = 900.0 + sin(t * PI * 0.2) * 50.0;
+        nodo_luz_central->pos_y = 700.0;
+        nodo_luz_central->pos_z = 400.0;
+
+        for(int j = 0; j < 4; j++) 
+        {
+            luz_central_frame->ambiental[j] = amb_luz_central[j] * parpadeo_estrellas;
+            luz_central_frame->difusa[j] = diff_luz_central[j] * parpadeo_estrellas;
+        }
+        
+        nodo_luz_estrellas->pos_x = 300.0 + cos(t * PI * 0.5) * 100.0;
+        nodo_luz_estrellas->pos_y = 200.0 + sin(t * PI * 0.4) * 80.0;
+        nodo_luz_estrellas->pos_z = 100.0;
+
+        nodo_luz_nebulosa->pos_x = 1200.0 + sin(t * PI * 0.3) * 150.0;
+        nodo_luz_nebulosa->pos_y = 400.0 + cos(t * PI * 0.35) * 100.0;
+        nodo_luz_nebulosa->pos_z = 300.0;
+        
+        for(int j = 0; j < 4; j++) 
+        {
+            luz_nebulosa_frame->ambiental[j] = amb_luz_nebulosa[j] * parpadeo_nebulosa;
+            luz_nebulosa_frame->difusa[j] = diff_luz_nebulosa[j] * parpadeo_nebulosa;
+        }
+        
+        nodo_luz_atomix->pos_x = nodo_atomix->pos_x;
+        nodo_luz_atomix->pos_y = nodo_atomix->pos_y;
+        nodo_luz_atomix->pos_z = 0.0;
+        
+        for(int j = 0; j < 4; j++) 
+        {
+            luz_atomix_frame->ambiental[j] = amb_luz_atomix[j] * brillo_atomix;
+            luz_atomix_frame->difusa[j] = diff_luz_atomix[j] * brillo_atomix;
+            luz_atomix_frame->especular[j] = spec_luz_atomix[j] * brillo_atomix;
+        }
+        
+        agrega_hijo_jerarquia(nodo_galaxia, nodo_luz_central);
+        agrega_hijo_jerarquia(nodo_galaxia, nodo_luz_estrellas);
+        agrega_hijo_jerarquia(nodo_galaxia, nodo_luz_nebulosa);
+        agrega_hijo_jerarquia(nodo_galaxia, nodo_luz_atomix);
+        
+        Frame *frame = crea_frame(f + 1, nodo_galaxia, duracion_frame);
+        agrega_frame_escena(escena_animacion, frame);
+    }
+
+    free(mat_galaxia);
+    free(mat_traje);
+    free(mat_casco);
+    free(mat_guantes);
+    free(luz_central);
+    free(luz_estrellas);
+    free(luz_nebulosa);
+    free(luz_atomix);
+    
+    encola_escena(pelicula_global, escena_animacion);
+}
+
 int main(int argc, char** argv) 
 {
     glutInit(&argc, argv);
@@ -6527,19 +6839,21 @@ int main(int argc, char** argv)
 
     pelicula_global = crea_pelicula();
 
-    //visualiza_escena1();
+    visualiza_escena1();
 
-    //visualiza_escena2();
+    visualiza_escena2();
 
-    //visualiza_escena3();
+    visualiza_escena3();
 
-    //visualiza_escena4();
+    visualiza_escena4();
 
-    //visualiza_escena5();
+    visualiza_escena5();
 
-    //visualiza_escena6();
+    visualiza_escena6();
 
     visualiza_escena7();
+
+    visualiza_escena8();
 
     escena_actual = pelicula_global->frente;
     
